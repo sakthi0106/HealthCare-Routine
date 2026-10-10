@@ -1,0 +1,60 @@
+"""Water, walking and respirometer endpoints."""
+from typing import Optional
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
+
+from models.schemas import WalkingIn, WaterIn
+from services import google_sheets as sheets
+from utils.auth import require_user
+
+router = APIRouter(prefix="/api", tags=["trackers"], dependencies=[Depends(require_user)])
+
+
+class SnoozeIn(BaseModel):
+    snooze_minutes: Optional[int] = Field(default=None, ge=1, le=240)
+
+
+@router.get("/water/today")
+def water_today():
+    return sheets.get_water_today()
+
+
+@router.post("/water")
+def water_add(body: WaterIn):
+    return sheets.add_water(body.amount_ml, body.date, body.time)
+
+
+@router.get("/walking/today")
+def walking_today():
+    return sheets.get_walking_today()
+
+
+@router.post("/walking")
+def walking_add(body: WalkingIn):
+    return sheets.add_walking(body.date, body.start_time, body.end_time, body.duration_minutes,
+                              body.distance_km, body.notes)
+
+
+@router.get("/respirometer/today")
+def respirometer_today():
+    items = sheets.get_respirometer_schedule()
+    s = sheets.get_settings()
+    return {"items": items, **sheets.summarize_sessions(items),
+            "settings": {"start": s["respirometer_start_time"], "end": s["respirometer_end_time"],
+                         "frequency_minutes": s["respirometer_frequency"]}}
+
+
+@router.post("/respirometer/{log_id}/complete")
+def respirometer_complete(log_id: str):
+    return sheets.record_respirometer_completion(log_id)
+
+
+@router.post("/respirometer/{log_id}/skip")
+def respirometer_skip(log_id: str):
+    return sheets.record_respirometer_skipped(log_id)
+
+
+@router.post("/respirometer/{log_id}/snooze")
+def respirometer_snooze(log_id: str, body: SnoozeIn = SnoozeIn()):
+    return sheets.record_respirometer_snoozed(log_id, body.snooze_minutes)

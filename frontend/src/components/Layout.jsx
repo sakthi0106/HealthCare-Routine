@@ -1,0 +1,66 @@
+import { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import useReminders from "../hooks/useReminders";
+import AIChat from "./AIChat";
+import { Disclaimer } from "./ui";
+import { fmtDate, todayISO } from "../utils/format";
+
+const FATHER_NAV = [
+  ["/", "🏠", "Home"], ["/medicines", "💊", "Pills"], ["/water", "💧", "Water"],
+  ["/walking", "🚶", "Walk"], ["/respirometer", "🫁", "Breathe"], ["/appointments", "🏥", "Doctor"],
+];
+const ADMIN_NAV = [
+  ["/", "🏠", "Home"], ["/admin/medicines", "💊", "Medicines"], ["/admin/inventory", "📦", "Stock"],
+  ["/admin/appointments", "🏥", "Visits"], ["/admin/reports", "📊", "Reports"], ["/admin/settings", "⚙️", "Settings"],
+];
+
+export default function Layout() {
+  const { isAdmin, logout } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
+  const { banners, dismiss } = useReminders();
+  const nav = isAdmin ? ADMIN_NAV : FATHER_NAV;
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div>
+          <strong>Family Health Companion</strong>
+          <div className="topbar-date">{fmtDate(todayISO(), { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+        </div>
+        <div className="topbar-right">
+          {isAdmin && <span className="badge badge-info">Family</span>}
+          <button className="btn btn-ghost btn-small" onClick={logout}>Sign out</button>
+        </div>
+      </header>
+
+      <nav className="nav" aria-label="Main">
+        {nav.map(([to, icon, label]) => (
+          <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
+            <span className="nav-icon" aria-hidden="true">{icon}</span>
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <main className="main">
+        {banners.slice(0, 3).map((b) => (
+          <div className="alert alert-warn banner" key={b.id} role="alert">
+            <div>
+              <strong>{b.title}</strong>
+              <p>{b.message}</p>
+            </div>
+            <button className="btn btn-small btn-outline" onClick={() => dismiss(b.id)}>OK</button>
+          </div>
+        ))}
+        <Outlet />
+        <Disclaimer />
+      </main>
+
+      <button className="fab" onClick={() => setChatOpen(true)} aria-label="Open AI Assistant">
+        <span aria-hidden="true">🤖</span> Ask
+      </button>
+      {chatOpen && <AIChat onClose={() => setChatOpen(false)} />}
+    </div>
+  );
+}
