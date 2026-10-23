@@ -30,8 +30,8 @@ app = FastAPI(title="Family Health Companion API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,   # login uses a token header, not cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
