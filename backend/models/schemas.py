@@ -1,7 +1,7 @@
 """Request validation (Pydantic). Anything invalid is rejected before it touches the Sheet."""
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from models.schema import APPOINTMENT_STATUSES
 from utils import timeutil as tu
