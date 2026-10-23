@@ -67,8 +67,8 @@ class MedicineIn(BaseModel):
 
     @field_validator("morning_time", "afternoon_time", "evening_time", "night_time", mode="before")
     @classmethod
-    def _times(cls, v):
-        return _time_or_blank(v)
+    def _times(cls, v, info: ValidationInfo):
+        return _medicine_time_or_blank(v, info.field_name.removesuffix("_time"))
 
     @field_validator("start_date", "end_date", mode="before")
     @classmethod
