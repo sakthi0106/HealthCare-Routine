@@ -52,7 +52,7 @@ def _slot_for_time(hhmm: str) -> str:
 
 # ------------------------------------------------------------------ medicines
 def _med_from_row(r) -> dict:
-        times = {key: tu.normalize_medicine_time(r.get(key, ""), slot) for slot, key in SLOTS}
+    times = {key: tu.normalize_medicine_time(r.get(key, ""), slot) for slot, key in SLOTS}
     n = sum(1 for v in times.values() if v)
     daily = _num(r["daily_quantity"])
     s, e = tu.parse_date(r["start_date"]), tu.parse_date(r["end_date"])
@@ -64,7 +64,7 @@ def _med_from_row(r) -> dict:
         "frequency": r["frequency"],
         **times,
         "daily_quantity": daily,
-        "dose_quantity": _num(daily / n) if n else daily,  # tablets used per scheduled dose
+        "dose_quantity": _num(daily / n) if n else daily,
         "current_stock": _num(r["current_stock"]),
         "reorder_level": _num(r["reorder_level"]),
         "start_date": s.isoformat() if s else "",
