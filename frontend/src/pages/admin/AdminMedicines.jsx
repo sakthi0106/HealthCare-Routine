@@ -81,6 +81,7 @@ export default function AdminMedicines() {
           <Field label="Frequency" hint='For your reference, e.g. "Twice daily"'><input type="text" value={form.frequency} onChange={set("frequency")} /></Field>
           <fieldset className="fieldset">
             <legend>Reminder times (leave blank to skip)</legend>
+            <p className="muted">Morning times are AM. Times before 12:00 in Afternoon, Evening, and Night are treated as PM (for example, 09:00 becomes 21:00).</p>
             <div className="grid2">
               <Field label="Morning"><input type="time" value={form.morning_time} onChange={set("morning_time")} /></Field>
               <Field label="Afternoon"><input type="time" value={form.afternoon_time} onChange={set("afternoon_time")} /></Field>
