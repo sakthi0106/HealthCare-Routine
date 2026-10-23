@@ -52,7 +52,7 @@ def _slot_for_time(hhmm: str) -> str:
 
 # ------------------------------------------------------------------ medicines
 def _med_from_row(r) -> dict:
-    times = {key: tu.norm_time(r.get(key, "")) for _, key in SLOTS}
+        times = {key: tu.normalize_medicine_time(r.get(key, ""), slot) for slot, key in SLOTS}
     n = sum(1 for v in times.values() if v)
     daily = _num(r["daily_quantity"])
     s, e = tu.parse_date(r["start_date"]), tu.parse_date(r["end_date"])
