@@ -19,6 +19,14 @@ def _time_or_blank(v):
         raise ValueError("must be a valid time like 08:00")
     return tu.norm_time(v)
 
+def _medicine_time_or_blank(v, slot):
+    v = _clean(v)
+    if v in (None, ""):
+        return ""
+    if tu.parse_time(v) is None:
+        raise ValueError("must be a valid time like 08:00")
+    return tu.normalize_medicine_time(v, slot)
+
 
 def _date_or_blank(v):
     v = _clean(v)
