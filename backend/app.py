@@ -28,9 +28,28 @@ async def lifespan(_app):
 
 app = FastAPI(title="Family Health Companion API", lifespan=lifespan)
 
+<<<<<<< HEAD
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()],
+=======
+def _allowed_origins():
+    raw = os.getenv("CORS_ORIGINS", "")
+    origins = []
+    for item in raw.replace(";", ",").split(","):
+        item = item.strip().strip('"').strip("'").rstrip("/")
+        if item:
+            origins.append(item)
+    return origins
+
+
+ALLOWED_ORIGINS = _allowed_origins()
+log.info("CORS allowed origins: %s", ALLOWED_ORIGINS)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+>>>>>>> df34195 (Initial commit)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,7 +77,11 @@ async def unexpected_handler(_req: Request, exc: Exception):
 
 @app.get("/api/health")
 def health_check():
+<<<<<<< HEAD
     return {"status": "ok"}
+=======
+    return {"status": "ok", "allowed_origins": ALLOWED_ORIGINS}
+>>>>>>> df34195 (Initial commit)
 
 
 for module in (auth, dashboard, medicines, trackers, admin_data):

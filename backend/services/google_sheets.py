@@ -168,7 +168,10 @@ def _dose_out(r, med, slot, d, now_dt) -> dict:
         "state": _state(r["status"] or "Pending", sched, snooze_until, d, now_dt),
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> df34195 (Initial commit)
 def get_today_medicine_schedule(d=None) -> list:
     """Today's doses. Missing log rows (status Pending) are created the first time they are needed."""
     d = d or tu.today()
