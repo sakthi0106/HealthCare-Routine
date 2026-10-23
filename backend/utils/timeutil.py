@@ -52,6 +52,15 @@ def fmt_time(t) -> str:
 def norm_time(value) -> str:
     return fmt_time(parse_time(value))
 
+def normalize_medicine_time(value, slot: str) -> str:
+    """Interpret ambiguous 1-11 hour inputs as PM for afternoon/evening/night."""
+    parsed = parse_time(value)
+    if parsed is None:
+        return ""
+    if slot in ("afternoon", "evening", "night") and 1 <= parsed.hour <= 11:
+        parsed = parsed.replace(hour=parsed.hour + 12)
+    return fmt_time(parsed)
+
 
 def parse_date(value):
     """Accepts '2026-10-11' or '11/10/2026' (day first). Returns date or None."""
