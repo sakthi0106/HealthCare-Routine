@@ -1,5 +1,5 @@
 // Small reusable pieces: Card, ProgressBar, Modal, StatusBadge, Loading/Error, Field, BarChart, Disclaimer.
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 export function Card({ icon, title, to, children, tone }) {
