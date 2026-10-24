@@ -33,8 +33,18 @@ export async function enablePush() {
       return { ok: false, reason: e.message };
     }
 
+        const wanted = toUint8(publicKey);
     let sub = await reg.pushManager.getSubscription();
-    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toUint8(publicKey) });
+    if (sub) {
+      // If the server's key changed, the old registration is useless, so remove it and register again.
+      const current = sub.options && sub.options.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+      const same = current && current.length === wanted.length && current.every((b, i) => b === wanted[i]);
+      if (!same) {
+        await sub.unsubscribe();
+        sub = null;
+      }
+    }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: wanted });
     await api("/api/push/subscribe", { method: "POST", body: sub.toJSON() });
     return { ok: true };
   } catch (e) {
