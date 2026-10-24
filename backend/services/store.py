@@ -86,8 +86,21 @@ class GoogleStore(Store):
         if not raw.startswith("{"):
             raw = base64.b64decode(raw).decode()
         creds = Credentials.from_service_account_info(json.loads(raw), scopes=SCOPES)
-        self._book = gspread.authorize(creds).open_by_key(sheet_id)
+        book = gspread.authorize(creds).open_by_key(sheet_id)
+        self._ensure_tabs(book)
+        self._book = book
         return self._book
+
+    @staticmethod
+    def _ensure_tabs(book) -> None:
+        """Adds any tab that a newer version of the app needs, so upgrades just work."""
+        existing = {ws.title for ws in book.worksheets()}
+        for name, columns in SHEETS.items():
+            if name not in existing:
+                ws = book.add_worksheet(title=name, rows=1000, cols=len(columns))
+                ws.update(values=[columns], range_name="A1", raw=True)
+                ws.freeze(rows=1)
+                log.info("Created missing sheet tab: %s", name)
 
     def _ws(self, name: str):
         if name not in self._worksheets:
