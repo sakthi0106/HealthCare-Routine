@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
-import { Check, ErrorBox, Field, Loading } from "../../components/ui";
+import { Check, ErrorBox, Field, Loading, TimeField } from "../../components/ui";
 
 export default function Settings() {
   const toast = useToast();
@@ -49,8 +49,8 @@ export default function Settings() {
 
       <fieldset className="fieldset"><legend>🫁 Respirometer</legend>
         <div className="grid2">
-          <Field label="Start time"><input type="time" value={f.respirometer_start_time} onChange={set("respirometer_start_time")} /></Field>
-          <Field label="End time"><input type="time" value={f.respirometer_end_time} onChange={set("respirometer_end_time")} /></Field>
+          <TimeField label="Start time" value={f.respirometer_start_time} onChange={(v) => setF({ ...f, respirometer_start_time: v })} defaultPeriod="AM" />
+          <TimeField label="End time" value={f.respirometer_end_time} onChange={(v) => setF({ ...f, respirometer_end_time: v })} defaultPeriod="PM" />
         </div>
         <Field label="Every (minutes)" hint={freq > 0 ? `= every ${freq % 60 === 0 ? freq / 60 + " hour(s)" : freq + " minutes"}. The end time is included.` : "0 = spread the sessions below evenly"}>
           <input type="number" inputMode="numeric" min="0" value={f.respirometer_frequency} onChange={set("respirometer_frequency")} />
@@ -73,11 +73,11 @@ export default function Settings() {
         <Check label="Appointment reminders" checked={f.notify_appointments} onChange={tick("notify_appointments")} />
         <Check label="Low stock alerts" checked={f.notify_low_stock} onChange={tick("notify_low_stock")} />
         <Check label="Walking reminder" checked={f.notify_walking} onChange={tick("notify_walking")} />
-        <Field label="Walking reminder time"><input type="time" value={f.walking_reminder_time} onChange={set("walking_reminder_time")} /></Field>
+        <TimeField label="Walking reminder time" value={f.walking_reminder_time} onChange={(v) => setF({ ...f, walking_reminder_time: v })} defaultPeriod="PM" />
         <Check label="Water reminders" checked={f.notify_water && f.water_reminder_enabled} onChange={(v) => setF({ ...f, notify_water: v, water_reminder_enabled: v })} />
         <div className="grid2">
-          <Field label="Water reminders from"><input type="time" value={f.water_reminder_start_time} onChange={set("water_reminder_start_time")} /></Field>
-          <Field label="until"><input type="time" value={f.water_reminder_end_time} onChange={set("water_reminder_end_time")} /></Field>
+          <TimeField label="Water reminders from" value={f.water_reminder_start_time} onChange={(v) => setF({ ...f, water_reminder_start_time: v })} defaultPeriod="AM" />
+          <TimeField label="until" value={f.water_reminder_end_time} onChange={(v) => setF({ ...f, water_reminder_end_time: v })} defaultPeriod="PM" />
         </div>
         <Field label="Water reminder every (minutes)"><input type="number" inputMode="numeric" min="15" value={f.water_reminder_interval_minutes} onChange={set("water_reminder_interval_minutes")} /></Field>
       </fieldset>
