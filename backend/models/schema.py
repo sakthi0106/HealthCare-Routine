@@ -31,6 +31,9 @@ SHEETS = {
         "quantity_added", "notes",
     ],
     "Settings": ["setting", "value"],
+    # used for background (push) reminders
+    "Push_Subscriptions": ["endpoint", "p256dh", "auth", "role", "created_at"],
+    "Notification_Log": ["notification_id", "sent_at"],
 }
 
 # Placeholders ONLY - set real values from the doctor's instructions in the app.
