@@ -4,7 +4,7 @@ import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
 import { Card, ErrorBox, Loading, ProgressBar, StatusBadge } from "../components/ui";
 import { DoseActions, SessionActions } from "../components/DoseActions";
-import { askPermission, permission } from "../services/notifications";
+import ReminderSetup from "../components/ReminderSetup";
 import { SLOT_ICON, cap, fmtDate, fmtMl, fmtShortDate, fmtTime } from "../utils/format";
 
 function slotSummary(items) {
@@ -21,7 +21,6 @@ function slotSummary(items) {
 
 export default function Home() {
   const { data: d, loading, error, reload } = useFetch("/api/dashboard", { interval: 60000 });
-  const [perm, setPerm] = useState(permission());
 
   if (!d) return error ? <ErrorBox message={error} onRetry={reload} /> : <Loading />;
 
@@ -34,14 +33,7 @@ export default function Home() {
     <>
       <h1>{d.greeting}, {d.name}!</h1>
       {error && <ErrorBox message={error} />}
-      {perm === "default" && (
-        <div className="alert alert-info">
-          <p>Turn on reminders so your phone can tell you when it is time for medicine.</p>
-          <button className="btn btn-small" style={{ marginTop: ".5rem" }} onClick={async () => setPerm(await askPermission())}>
-            Turn on reminders
-          </button>
-        </div>
-      )}
+      <ReminderSetup />
 
       {low.length > 0 && (
         <div className="alert alert-warn" role="alert">
