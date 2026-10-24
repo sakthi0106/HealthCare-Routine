@@ -2,7 +2,7 @@ import { useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
-import { Card, Check, ErrorBox, Field, Loading, Modal } from "../../components/ui";
+import { Card, Check, ErrorBox, Field, Loading, Modal, TimeField } from "../../components/ui";
 import { fmtTime } from "../../utils/format";
 
 const EMPTY = { medicine_name: "", generic_name: "", dosage: "", frequency: "", morning_time: "", afternoon_time: "",
@@ -83,10 +83,10 @@ export default function AdminMedicines() {
             <legend>Reminder times (leave blank to skip)</legend>
             <p className="muted">Morning times are AM. Times before 12:00 in Afternoon, Evening, and Night are treated as PM (for example, 09:00 becomes 21:00).</p>
             <div className="grid2">
-              <Field label="Morning"><input type="time" value={form.morning_time} onChange={set("morning_time")} /></Field>
-              <Field label="Afternoon"><input type="time" value={form.afternoon_time} onChange={set("afternoon_time")} /></Field>
-              <Field label="Evening"><input type="time" value={form.evening_time} onChange={set("evening_time")} /></Field>
-              <Field label="Night"><input type="time" value={form.night_time} onChange={set("night_time")} /></Field>
+              <TimeField label="Morning" value={form.morning_time} onChange={(v) => setForm({ ...form, morning_time: v })} defaultPeriod="AM" />
+              <TimeField label="Afternoon" value={form.afternoon_time} onChange={(v) => setForm({ ...form, afternoon_time: v })} defaultPeriod="PM" />
+              <TimeField label="Evening" value={form.evening_time} onChange={(v) => setForm({ ...form, evening_time: v })} defaultPeriod="PM" />
+              <TimeField label="Night" hint="Choose PM for night time" value={form.night_time} onChange={(v) => setForm({ ...form, night_time: v })} defaultPeriod="PM" />
             </div>
           </fieldset>
           <div className="grid2">
