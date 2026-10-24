@@ -78,7 +78,8 @@ def _send(sub_row: dict, payload: dict) -> str:
         status = getattr(getattr(e, "response", None), "status_code", None)
         if status in (404, 410):
             return "gone"
-        log.warning("Push send failed (HTTP %s)", status)
+        body = (getattr(getattr(e, "response", None), "text", "") or "")[:200]
+        log.warning("Push send failed (HTTP %s): %s", status, body)
         return "error"
     except Exception:  # noqa: BLE001
         log.exception("Push send crashed")
