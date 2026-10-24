@@ -46,13 +46,15 @@ def get_due_notifications() -> list:
             if d["state"] == "due":
                 out.append(_n(f"med-{d['log_id']}-{d['snooze_until'] or 'base'}", MEDICINE_REMINDER, "💊",
                               "Medicine Reminder",
-                              f"It is time for your {d['slot']} medicine: {d['medicine_name']}."))
+                               f"It is time for your {d['slot']} medicine: {d['medicine_name']}.",
+                              due_at=d["snooze_until"] or d["scheduled_time"]))
 
     if s["notify_respirometer"]:
         for r in sheets.get_respirometer_schedule():
             if r["state"] == "due":
                 out.append(_n(f"resp-{r['log_id']}-{r['snooze_until'] or 'base'}", RESPIROMETER_REMINDER, "🫁",
-                              "Respirometer Reminder", "Your scheduled respirometer session is due."))
+                              "Respirometer Reminder", "Your scheduled respirometer session is due.",
+                              due_at=r["snooze_until"] or r["scheduled_time"]))
 
     if s["notify_water"] and s["water_reminder_enabled"]:
         start, end = tu.parse_time(s["water_reminder_start_time"]), tu.parse_time(s["water_reminder_end_time"])
