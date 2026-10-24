@@ -2,7 +2,7 @@ import { useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
-import { ErrorBox, Field, Loading, Modal } from "../../components/ui";
+import { ErrorBox, Field, Loading, Modal, TimeField } from "../../components/ui";
 import { AppointmentCard } from "../Appointments";
 
 const EMPTY = { date: "", time: "", doctor: "", hospital: "", department: "", purpose: "", reminder_days: "7,1", status: "Scheduled", notes: "" };
@@ -65,7 +65,7 @@ export default function AdminAppointments() {
         <Modal title={editing === "new" ? "Add appointment" : "Edit appointment"} onClose={() => setEditing(null)}>
           <div className="grid2">
             <Field label="Date *"><input type="date" value={form.date} onChange={set("date")} /></Field>
-            <Field label="Time *"><input type="time" value={form.time} onChange={set("time")} /></Field>
+            <TimeField label="Time *" value={form.time} onChange={(v) => setForm({ ...form, time: v })} defaultPeriod="AM" />
           </div>
           <Field label="Doctor"><input type="text" value={form.doctor} onChange={set("doctor")} /></Field>
           <Field label="Hospital"><input type="text" value={form.hospital} onChange={set("hospital")} /></Field>
