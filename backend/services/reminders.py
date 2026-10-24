@@ -25,8 +25,11 @@ APPOINTMENT_REMINDER = "APPOINTMENT_REMINDER"
 LOW_STOCK_ALERT = "LOW_STOCK_ALERT"
 
 
-def _n(id_, type_, icon, title, message) -> dict:
-    return {"id": id_, "type": type_, "title": f"{icon} {title}", "message": message}
+def _n(id_, type_, icon, title, message, due_at=None) -> dict:
+    n = {"id": id_, "type": type_, "title": f"{icon} {title}", "message": message}
+    if due_at:
+        n["due_at"] = due_at  # "HH:MM" - when it became due today
+    return n
 
 
 def get_due_notifications() -> list:
