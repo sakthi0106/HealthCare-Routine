@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
 import { useToast } from "../hooks/useToast";
-import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar } from "../components/ui";
+import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
 import { fmtShortDate, fmtTime, todayISO } from "../utils/format";
 
 const EMPTY = { date: todayISO(), start_time: "", end_time: "", duration_minutes: "", distance_km: "", notes: "" };
@@ -95,8 +95,8 @@ export default function Walking() {
         <Modal title="Add Walking" onClose={close}>
           <Field label="Date"><input type="date" max={todayISO()} value={form.date} onChange={set("date")} /></Field>
           <div className="grid2">
-            <Field label="Start time"><input type="time" value={form.start_time} onChange={set("start_time")} /></Field>
-            <Field label="End time"><input type="time" value={form.end_time} onChange={set("end_time")} /></Field>
+            <TimeField label="Start time" value={form.start_time} onChange={(v) => setForm({ ...form, start_time: v })} defaultPeriod="AM" />
+            <TimeField label="End time" value={form.end_time} onChange={(v) => setForm({ ...form, end_time: v })} defaultPeriod="AM" />
           </div>
           <Field label="OR duration (minutes)"><input type="number" inputMode="decimal" min="0" value={form.duration_minutes} onChange={set("duration_minutes")} /></Field>
           <Field label="Distance (km)"><input type="number" inputMode="decimal" min="0" step="0.1" value={form.distance_km} onChange={set("distance_km")} /></Field>
