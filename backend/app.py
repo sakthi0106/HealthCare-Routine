@@ -1,6 +1,7 @@
 """FastAPI entry point."""
 import logging
 import os
+import threading
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -14,7 +15,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("app")
 
 from routes import admin_data, auth, dashboard, medicines, trackers  # noqa: E402
+from routes import push as push_routes  # noqa: E402
+from services import push  # noqa: E402
 from utils.errors import AppError  # noqa: E402
+
+
+def _scheduler(stop: threading.Event) -> None:
+    """Sends due reminders every minute while the server is awake (an outside cron also calls /api/cron/run)."""
+    while not stop.wait(60):
+        try:
+            push.dispatch_due()
+        except Exception:  # noqa: BLE001
+            log.exception("Reminder scheduler error")
 
 
 @asynccontextmanager
@@ -23,7 +35,14 @@ async def lifespan(_app):
         log.warning("JWT_SECRET is missing or too short - logins will fail until it is set.")
     if os.getenv("ADMIN_PIN", "change-me") in ("", "change-me") or os.getenv("ADMIN_PIN") == os.getenv("FATHER_PIN"):
         log.warning("Set a unique ADMIN_PIN that differs from FATHER_PIN.")
+    stop = threading.Event()
+    if push.configured() and os.getenv("RUN_SCHEDULER", "true").lower() != "false":
+        threading.Thread(target=_scheduler, args=(stop,), daemon=True).start()
+        log.info("Background reminder scheduler started.")
+    elif not push.configured():
+        log.warning("VAPID keys are not set - background reminders are switched off.")
     yield
+    stop.set()
 
 
 app = FastAPI(title="Family Health Companion API", lifespan=lifespan)
@@ -56,10 +75,16 @@ async def unexpected_handler(_req: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Something went wrong. Please try again."})
 
 
+@app.get("/")
+def root():
+    return {"app": "Family Health Companion API", "health": "/api/health"}
+
+
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "background_reminders": push.configured()}
 
 
-for module in (auth, dashboard, medicines, trackers, admin_data):
+for module in (auth, dashboard, medicines, trackers, admin_data, push_routes):
     app.include_router(module.router)
+app.include_router(push_routes.cron_router)
