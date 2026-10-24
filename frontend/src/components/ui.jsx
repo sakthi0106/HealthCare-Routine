@@ -112,3 +112,44 @@ export const Disclaimer = ({ compact }) => (
     Always follow your doctor's instructions.
   </p>
 );
+
+// 12-hour time picker with an explicit AM/PM box (the phone's own time box often defaults to AM).
+// `value` and `onChange` use 24-hour "HH:MM" text (or "" when empty), which is what the backend stores.
+const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+
+export function TimeField({ label, hint, value, onChange, defaultPeriod = "AM" }) {
+  const [pref, setPref] = useState(defaultPeriod);
+  const m = /^(\d{2}):(\d{2})$/.exec(value || "");
+  const hour12 = m ? String(Number(m[1]) % 12 || 12) : "";
+  const minute = m ? Number(m[2]) : 0;
+  const period = m ? (Number(m[1]) >= 12 ? "PM" : "AM") : pref;
+  const minuteOptions = MINUTES.includes(minute) ? MINUTES : [...MINUTES, minute].sort((a, b) => a - b);
+
+  const emit = (h12, min, per) => {
+    if (!h12) return onChange("");
+    const h = (Number(h12) % 12) + (per === "PM" ? 12 : 0);
+    onChange(`${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`);
+  };
+
+  return (
+    <div className="field">
+      <span className="field-label">{label}</span>
+      <div className="time12">
+        <select aria-label={`${label} hour`} value={hour12} onChange={(e) => emit(e.target.value, minute, period)}>
+          <option value="">--</option>
+          {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+        </select>
+        <span aria-hidden="true">:</span>
+        <select aria-label={`${label} minute`} value={minute} disabled={!hour12} onChange={(e) => emit(hour12, Number(e.target.value), period)}>
+          {minuteOptions.map((n) => <option key={n} value={n}>{String(n).padStart(2, "0")}</option>)}
+        </select>
+        <select aria-label={`${label} AM or PM`} value={period} onChange={(e) => { setPref(e.target.value); emit(hour12, minute, e.target.value); }}>
+          <option>AM</option>
+          <option>PM</option>
+        </select>
+      </div>
+      {hint && <span className="hint">{hint}</span>}
+    </div>
+  );
+}
