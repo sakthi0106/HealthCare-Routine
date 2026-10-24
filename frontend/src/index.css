@@ -134,3 +134,6 @@ th { color: var(--muted); font-size: .75rem; text-transform: uppercase; }
 .login .logo { font-size: 3.5rem; text-align: center; }
 .pin { text-align: center; font-size: 1.8rem; letter-spacing: .4em; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+.time12 { display: flex; align-items: center; gap: .4rem; }
+.time12 select { flex: 1; min-width: 0; padding-left: .5rem; padding-right: .3rem; }
