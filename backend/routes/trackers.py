@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-
+from models.schemas import WalkingIn, WalkingUpdate, WaterIn, WaterUpdate
 from services import google_sheets as sheets
 from utils.auth import require_user
 
