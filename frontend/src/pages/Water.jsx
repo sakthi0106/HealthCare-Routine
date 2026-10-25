@@ -79,7 +79,13 @@ export default function Water() {
           <h3 style={{ marginTop: "1rem" }}>Today's entries</h3>
           {w.entries.length === 0 && <p className="muted">Nothing recorded yet.</p>}
           {w.entries.map((e) => (
-            <div className="row" key={e.log_id}><span>{fmtTime(e.time)}</span><strong>{e.amount_ml} ml</strong></div>
+          <div className="row" key={e.log_id}>
+              <span>{fmtTime(e.time)}</span>
+              <span>
+                <strong>{e.amount_ml} ml</strong>{" "}
+                <button className="btn btn-small btn-outline" onClick={() => openEdit(e)}>Edit</button>
+              </span>
+            </div>
           ))}
         </Card>
       )}
@@ -104,6 +110,16 @@ export default function Water() {
             <input type="number" inputMode="numeric" min="1" max="5000" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
           </Field>
           <button className="btn btn-block" disabled={busy || !(Number(amount) > 0)} onClick={() => add(Math.round(Number(amount)))}>Save</button>
+                </Modal>
+      )}
+
+      {editing && (
+        <Modal title="Edit water entry" onClose={() => setEditing(null)}>
+          <Field label="Amount in ml">
+            <input type="number" inputMode="numeric" min="1" max="5000" value={editForm.amount_ml} onChange={(e) => setEditForm({ ...editForm, amount_ml: e.target.value })} autoFocus />
+          </Field>
+          <TimeField label="Time" value={editForm.time} onChange={(v) => setEditForm({ ...editForm, time: v })} defaultPeriod="AM" />
+          <button className="btn btn-block" disabled={busy || !(Number(editForm.amount_ml) > 0)} onClick={saveEdit}>{busy ? "Saving…" : "Save changes"}</button>
         </Modal>
       )}
     </>
