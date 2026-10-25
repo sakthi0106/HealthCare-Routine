@@ -40,9 +40,8 @@ export default function ReminderSetup() {
 
   if (state.status === "on") {
     return (
-      <div className="alert alert-info banner">
+      <div className="alert alert-info">
         <p>🔔 Reminders are on for this phone.</p>
-        <button className="btn btn-small btn-outline" onClick={test}>Send test</button>
       </div>
     );
   }
