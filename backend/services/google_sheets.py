@@ -683,3 +683,18 @@ def update_walking(log_id, date_str=None, start_time=None, end_time=None, durati
         if updates:
             get_store().update("Walking_Log", "log_id", log_id, updates)
         return get_walking_today()
+
+
+# ------------------------------------------------------------------ delete water / walking entries
+def delete_water(log_id) -> dict:
+    with _lock:
+        _find_log("Water_Log", log_id, "water")
+        get_store().delete("Water_Log", "log_id", log_id)
+        return get_water_today()
+
+
+def delete_walking(log_id) -> dict:
+    with _lock:
+        _find_log("Walking_Log", log_id, "walking")
+        get_store().delete("Walking_Log", "log_id", log_id)
+        return get_walking_today()
