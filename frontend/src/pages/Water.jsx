@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
 import { useToast } from "../hooks/useToast";
-import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar } from "../components/ui";
+import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
 import { fmtMl, fmtShortDate, fmtTime } from "../utils/format";
 
 export default function Water() {
@@ -14,6 +14,8 @@ export default function Water() {
   const [custom, setCustom] = useState(params.get("custom") === "1");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({ amount_ml: "", time: "" });
 
   const add = async (ml) => {
     setBusy(true);
@@ -27,6 +29,29 @@ export default function Water() {
       hist.reload();
     } catch (e) {
       toast(e.message.startsWith("Please check") ? e.message : "Unable to save your water entry. Please try again.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+    const openEdit = (entry) => {
+    setEditing(entry);
+    setEditForm({ amount_ml: String(entry.amount_ml), time: entry.time });
+  };
+
+  const saveEdit = async () => {
+    setBusy(true);
+    try {
+      await api(`/api/water/${editing.log_id}`, {
+        method: "PUT",
+        body: { amount_ml: Math.round(Number(editForm.amount_ml)), time: editForm.time || null },
+      });
+      toast("Water entry updated ✓");
+      setEditing(null);
+      today.reload();
+      hist.reload();
+    } catch (err) {
+      toast(err.message, "error");
     } finally {
       setBusy(false);
     }
