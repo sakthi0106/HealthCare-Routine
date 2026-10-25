@@ -57,6 +57,18 @@ export default function Water() {
     }
   };
 
+  const remove = async (entry) => {
+    if (!window.confirm(`Delete ${entry.amount_ml} ml at ${fmtTime(entry.time)}?`)) return;
+    try {
+      await api(`/api/water/${entry.log_id}`, { method: "DELETE" });
+      toast("Water entry deleted");
+      today.reload();
+      hist.reload();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  };
+
   const w = today.data;
   const days = hist.data?.water.days || [];
   const last7 = days.slice(-7);
@@ -81,9 +93,10 @@ export default function Water() {
           {w.entries.map((e) => (
           <div className="row" key={e.log_id}>
               <span>{fmtTime(e.time)}</span>
-              <span>
-                <strong>{e.amount_ml} ml</strong>{" "}
+              <span style={{ display: "flex", alignItems: "center", gap: ".4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <strong>{e.amount_ml} ml</strong>
                 <button className="btn btn-small btn-outline" onClick={() => openEdit(e)}>Edit</button>
+                <button className="btn btn-small btn-outline" onClick={() => remove(e)}>Delete</button>
               </span>
             </div>
           ))}
