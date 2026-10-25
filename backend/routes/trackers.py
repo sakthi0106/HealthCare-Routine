@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from models.schemas import WalkingIn, WaterIn
+
 from services import google_sheets as sheets
 from utils.auth import require_user
 
@@ -23,6 +23,16 @@ def water_today():
 @router.post("/water")
 def water_add(body: WaterIn):
     return sheets.add_water(body.amount_ml, body.date, body.time)
+    
+@router.put("/water/{log_id}")
+def water_edit(log_id: str, body: WaterUpdate):
+    return sheets.update_water(log_id, body.amount_ml, body.date, body.time)
+
+
+@router.put("/walking/{log_id}")
+def walking_edit(log_id: str, body: WalkingUpdate):
+    return sheets.update_walking(log_id, body.date, body.start_time, body.end_time, body.duration_minutes,
+                                 body.distance_km, body.notes)
 
 
 @router.get("/walking/today")
