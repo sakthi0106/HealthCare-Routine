@@ -271,3 +271,39 @@ class ChatTurn(BaseModel):
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=500)
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+
+
+# ---------- editing water / walking entries ----------
+class WaterUpdate(BaseModel):
+    amount_ml: Optional[int] = Field(default=None, gt=0, le=5000)
+    date: Optional[str] = None
+    time: Optional[str] = None
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def _d(cls, v):
+        return None if v in (None, "") else _date_or_blank(v)
+
+    @field_validator("time", mode="before")
+    @classmethod
+    def _t(cls, v):
+        return None if v in (None, "") else _time_or_blank(v)
+
+
+class WalkingUpdate(BaseModel):
+    date: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    duration_minutes: Optional[float] = Field(default=None, ge=0, le=1440)
+    distance_km: Optional[float] = Field(default=None, ge=0, le=500)
+    notes: Optional[str] = Field(default=None, max_length=300)
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def _d(cls, v):
+        return None if v in (None, "") else _date_or_blank(v)
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def _t(cls, v):
+        return None if v in (None, "") else _time_or_blank(v)
