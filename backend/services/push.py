@@ -12,6 +12,7 @@ How it works:
 import json
 import logging
 import os
+import re
 import threading
 
 from services import reminders
@@ -33,8 +34,20 @@ def public_key() -> str:
     return os.getenv("VAPID_PUBLIC_KEY", "").strip()
 
 
+_SUBJECT_OK = re.compile(r"^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https://[^/:\s]+(:\d+)?)$", re.I)
+
+
 def _subject() -> str:
-    return os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip()
+    raw = os.getenv("VAPID_SUBJECT", "").strip().strip('"').strip("'").strip()
+    if raw.upper().startswith("VAPID_SUBJECT="):  # the whole line was pasted by mistake
+        raw = raw.split("=", 1)[1].strip().strip('"').strip("'").strip()
+    if "@" in raw and not raw.lower().startswith(("mailto:", "http")):
+        raw = "mailto:" + raw  # email typed without "mailto:"
+    raw = re.sub(r"^mailto:\s+", "mailto:", raw, flags=re.I)  # stray space after "mailto:"
+    if not _SUBJECT_OK.match(raw):
+        log.warning("VAPID_SUBJECT is not valid (%r). Using a placeholder.", raw)
+        return "mailto:admin@example.com"
+    return raw
 
 
 # ------------------------------------------------------------------ subscriptions
