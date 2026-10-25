@@ -34,6 +34,15 @@ def walking_edit(log_id: str, body: WalkingUpdate):
     return sheets.update_walking(log_id, body.date, body.start_time, body.end_time, body.duration_minutes,
                                  body.distance_km, body.notes)
 
+@router.delete("/water/{log_id}")
+def water_delete(log_id: str):
+    return sheets.delete_water(log_id)
+
+
+@router.delete("/walking/{log_id}")
+def walking_delete(log_id: str):
+    return sheets.delete_walking(log_id)
+
 
 @router.get("/walking/today")
 def walking_today():
