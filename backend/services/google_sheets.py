@@ -629,3 +629,57 @@ def update_settings(updates: dict) -> dict:
             else:
                 store.append("Settings", {"setting": key, "value": value})
         return get_settings()
+
+
+# ------------------------------------------------------------------ edit water / walking entries
+def _find_log(sheet: str, log_id: str, label: str) -> dict:
+    row = next((r for r in get_store().read(sheet) if r["log_id"] == log_id), None)
+    if row is None:
+        raise AppError(f"That {label} entry could not be found.", 404)
+    return row
+
+
+def update_water(log_id, amount_ml=None, date_str=None, time_str=None) -> dict:
+    with _lock:
+        _find_log("Water_Log", log_id, "water")
+        updates = {}
+        if amount_ml is not None:
+            updates["amount_ml"] = str(int(amount_ml))
+        if date_str:
+            d = tu.parse_date(date_str)
+            _not_future(d)
+            updates["date"] = d.isoformat()
+        if time_str:
+            updates["time"] = time_str
+        if updates:
+            get_store().update("Water_Log", "log_id", log_id, updates)
+        return get_water_today()
+
+
+def update_walking(log_id, date_str=None, start_time=None, end_time=None, duration_minutes=None,
+                   distance_km=None, notes=None) -> dict:
+    with _lock:
+        _find_log("Walking_Log", log_id, "walking")
+        updates = {}
+        if date_str:
+            d = tu.parse_date(date_str)
+            _not_future(d)
+            updates["date"] = d.isoformat()
+        if start_time is not None:
+            updates["start_time"] = start_time
+        if duration_minutes:                          # a number was typed
+            updates["duration_minutes"] = _fmt_num(duration_minutes)
+        elif start_time and end_time:                 # work it out from start and end time
+            minutes = tu.minutes_of(tu.parse_time(end_time)) - tu.minutes_of(tu.parse_time(start_time))
+            if minutes <= 0:
+                raise AppError("The end time must be after the start time.", 400)
+            updates["duration_minutes"] = _fmt_num(minutes)
+        elif duration_minutes is not None:            # 0 was typed
+            raise AppError("The walking time must be more than zero.", 400)
+        if distance_km is not None:
+            updates["distance_km"] = _fmt_num(distance_km)
+        if notes is not None:
+            updates["notes"] = notes
+        if updates:
+            get_store().update("Walking_Log", "log_id", log_id, updates)
+        return get_walking_today()
