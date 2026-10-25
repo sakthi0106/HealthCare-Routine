@@ -52,6 +52,18 @@ export default function Walking() {
     }
   };
 
+  const remove = async (entry) => {
+    if (!window.confirm(`Delete this walk (${entry.duration_minutes} min, ${entry.distance_km} km)?`)) return;
+    try {
+      await api(`/api/walking/${entry.log_id}`, { method: "DELETE" });
+      toast("Walk deleted");
+      today.reload();
+      hist.reload();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  };
+
   const t = today.data;
   const days = hist.data?.walking.days || [];
   const week = days.slice(-7);
@@ -74,9 +86,10 @@ export default function Walking() {
           {t.entries.map((e) => (
             <div className="row" key={e.log_id}>
               <span>{e.start_time ? fmtTime(e.start_time) : "Walk"}{e.notes ? ` · ${e.notes}` : ""}</span>
-              <span>
-                <strong>{e.duration_minutes} min · {e.distance_km} km</strong>{" "}
+              <span style={{ display: "flex", alignItems: "center", gap: ".4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <strong>{e.duration_minutes} min · {e.distance_km} km</strong>
                 <button className="btn btn-small btn-outline" onClick={() => openEdit(e)}>Edit</button>
+                <button className="btn btn-small btn-outline" onClick={() => remove(e)}>Delete</button>
               </span>
             </div>
           ))}
