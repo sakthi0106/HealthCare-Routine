@@ -16,9 +16,16 @@ export default function Walking() {
   const [open, setOpen] = useState(params.get("add") === "1");
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [editId, setEditId] = useState(null);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
-  const close = () => { setOpen(false); setParams({}); };
+  const close = () => { setOpen(false); setParams({}); setEditId(null); };
+  const openEdit = (e) => {
+    setForm({ date: e.date, start_time: e.start_time || "", end_time: "", duration_minutes: String(e.duration_minutes),
+      distance_km: String(e.distance_km), notes: e.notes || "" });
+    setEditId(e.log_id);
+    setOpen(true);
+  };
   const save = async () => {
     if (!form.duration_minutes && !(form.start_time && form.end_time)) {
       toast("Please enter how long you walked, or the start and end time.", "error");
@@ -26,11 +33,14 @@ export default function Walking() {
     }
     setBusy(true);
     try {
-      await api("/api/walking", { method: "POST", body: {
+      const body = {
         date: form.date, start_time: form.start_time || null, end_time: form.end_time || null,
-        duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : null,
-        distance_km: form.distance_km ? Number(form.distance_km) : 0, notes: form.notes } });
-      toast("Walk saved 🚶");
+        // if both start and end time are filled in, the time is worked out from them
+        duration_minutes: form.start_time && form.end_time ? null : form.duration_minutes ? Number(form.duration_minutes) : null,
+        distance_km: form.distance_km ? Number(form.distance_km) : 0, notes: form.notes };
+      if (editId) await api(`/api/walking/${editId}`, { method: "PUT", body });
+      else await api("/api/walking", { method: "POST", body });
+      toast(editId ? "Walk updated ✓" : "Walk saved 🚶");
       close();
       setForm(EMPTY);
       today.reload();
@@ -60,11 +70,14 @@ export default function Walking() {
           <p className="big">{t.total_minutes} <small>minutes</small><br />{t.total_km} <small>km</small></p>
           {t.target_minutes > 0 && <ProgressBar value={t.total_minutes} max={t.target_minutes} label="Walking progress" />}
           {t.target_minutes > 0 && <p className="muted">Target: {t.target_minutes} min{t.target_km ? ` · ${t.target_km} km` : ""}</p>}
-          <button className="btn btn-block" onClick={() => setOpen(true)}>+ Add Walking</button>
+          <button className="btn btn-block" onClick={() => { setForm(EMPTY); setEditId(null); setOpen(true); }}>+ Add Walking</button>
           {t.entries.map((e) => (
             <div className="row" key={e.log_id}>
               <span>{e.start_time ? fmtTime(e.start_time) : "Walk"}{e.notes ? ` · ${e.notes}` : ""}</span>
-              <strong>{e.duration_minutes} min · {e.distance_km} km</strong>
+              <span>
+                <strong>{e.duration_minutes} min · {e.distance_km} km</strong>{" "}
+                <button className="btn btn-small btn-outline" onClick={() => openEdit(e)}>Edit</button>
+              </span>
             </div>
           ))}
         </Card>
@@ -92,7 +105,7 @@ export default function Walking() {
       </Card>
 
       {open && (
-        <Modal title="Add Walking" onClose={close}>
+        <Modal title={editId ? "Edit Walking" : "Add Walking"} onClose={close}>
           <Field label="Date"><input type="date" max={todayISO()} value={form.date} onChange={set("date")} /></Field>
           <div className="grid2">
             <TimeField label="Start time" value={form.start_time} onChange={(v) => setForm({ ...form, start_time: v })} defaultPeriod="AM" />
