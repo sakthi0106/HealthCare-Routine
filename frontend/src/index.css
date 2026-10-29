@@ -137,3 +137,18 @@ th { color: var(--muted); font-size: .75rem; text-transform: uppercase; }
 
 .time12 { display: flex; align-items: center; gap: .4rem; }
 .time12 select { flex: 1; min-width: 0; padding-left: .5rem; padding-right: .3rem; }
+
+/* ===================== Light glass look (default) ===================== */
+html:not([data-theme="dark"]) body {
+  background: radial-gradient(900px 500px at 5% -5%, #cfe6ff 0%, transparent 60%),
+              radial-gradient(800px 500px at 100% 0%, #c9f3e2 0%, transparent 55%), #f3f7fb;
+  background-attachment: fixed;
+}
+html:not([data-theme="dark"]) .topbar { background: rgba(255, 255, 255, .78); color: var(--text); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(20, 40, 70, .08); box-shadow: 0 2px 14px rgba(31, 60, 110, .08); }
+html:not([data-theme="dark"]) .topbar .btn-ghost { color: var(--primary-dark); border-color: var(--line); }
+html:not([data-theme="dark"]) .nav { background: rgba(255, 255, 255, .84); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+html:not([data-theme="dark"]) .card, html:not([data-theme="dark"]) .stat-tile { background: rgba(255, 255, 255, .74); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid rgba(20, 40, 70, .08); box-shadow: 0 8px 28px rgba(31, 60, 110, .10); }
+html:not([data-theme="dark"]) .card-warn { background: rgba(255, 244, 214, .88); border-color: #e0a64a; }
+html:not([data-theme="dark"]) .sheet { background: rgba(255, 255, 255, .95); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+html:not([data-theme="dark"]) .tile { background: rgba(224, 241, 238, .75); }
+html:not([data-theme="dark"]) .gauge { background: rgba(31, 60, 110, .12); }
