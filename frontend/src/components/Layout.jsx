@@ -21,8 +21,8 @@ export default function Layout() {
   const { banners, dismiss } = useReminders();
   const nav = isAdmin ? ADMIN_NAV : FATHER_NAV;
 
-  // Dark glass look is the default for the family/admin; the father's screens stay light unless he chooses dark.
-  const [theme, setTheme] = useState(() => localStorage.getItem("fhc_theme") || (isAdmin ? "dark" : "light"));
+  // Light glass look is the default for everyone; the 🌙 Dark button switches (and remembers the choice).
+  const [theme, setTheme] = useState(() => localStorage.getItem("fhc_theme") || "light");
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
