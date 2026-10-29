@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import { Card, ErrorBox, Loading, ProgressBar, StatusBadge } from "../components/ui";
 import { DoseActions, SessionActions } from "../components/DoseActions";
 import ReminderSetup from "../components/ReminderSetup";
+import { useAuth } from "../hooks/useAuth";
 import { SLOT_ICON, cap, fmtDate, fmtMl, fmtShortDate, fmtTime } from "../utils/format";
 
 function slotSummary(items) {
@@ -21,6 +22,7 @@ function slotSummary(items) {
 
 export default function Home() {
   const { data: d, loading, error, reload } = useFetch("/api/dashboard", { interval: 60000 });
+  const { isAdmin } = useAuth();
 
   if (!d) return error ? <ErrorBox message={error} onRetry={reload} /> : <Loading />;
 
@@ -28,12 +30,32 @@ export default function Home() {
   const dueDoses = m.items.filter((i) => i.state === "due");
   const nextDose = m.next;
   const dueSession = r.items.find((i) => i.state === "due");
+  const lastTaken = [...m.items].filter((i) => i.taken_time).sort((a, b) => b.taken_time.localeCompare(a.taken_time))[0];
 
   return (
     <>
       <h1>{d.greeting}, {d.name}!</h1>
       {error && <ErrorBox message={error} />}
       <ReminderSetup />
+
+      {isAdmin && (
+        <section className="stats-banner" aria-label="Overview">
+          <div className="stat-tile">
+            <div className="stat-label">Medicines today</div>
+            <div className="stat-value">{m.taken} / {m.total}</div>
+          </div>
+          <div className={`stat-tile ${low.length ? "warn" : ""}`}>
+            <div className="stat-label">Low stock alerts</div>
+            <div className="stat-value">{low.length}</div>
+          </div>
+          <div className="stat-tile">
+            <div className="stat-label">Recent activity</div>
+            <div className="stat-value small">
+              {lastTaken ? `${lastTaken.medicine_name} taken at ${fmtTime(lastTaken.taken_time)}` : "Nothing recorded yet"}
+            </div>
+          </div>
+        </section>
+      )}
 
       {low.length > 0 && (
         <div className="alert alert-warn" role="alert">
