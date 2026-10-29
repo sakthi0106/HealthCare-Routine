@@ -37,12 +37,17 @@ export default function Inventory() {
       {inv.error && <ErrorBox message={inv.error} onRetry={inv.reload} />}
       {!inv.data && !inv.error && <Loading />}
       {inv.data && inv.data.items.length === 0 && <p className="muted center">Add medicines first.</p>}
-      {inv.data && inv.data.items.map((i) => {
+      {inv.data && <div className="cards-grid">{inv.data.items.map((i) => {
         const [label, tone] = TONE[i.state];
+        const target = Math.max(i.reorder_level * 3, i.daily_quantity * 7, 1);   // a "full" bar = about a week or 3x the reorder level
+        const pct = Math.min(100, Math.round((i.current_stock / target) * 100));
         return (
           <Card key={i.medicine_id} icon="💊" title={i.medicine_name} tone={i.state !== "ok" ? "warn" : undefined}>
-            <span className={`badge badge-${tone}`}>{label}</span>
+            <span className={`badge badge-${tone} ${i.state === "low" ? "badge-pulse" : ""}`}>{label}</span>
             <p className="big" style={{ marginTop: ".4rem" }}>{i.current_stock} <small>tablets left</small></p>
+            <div className={`gauge g-${i.state}`} role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Stock level">
+              <i style={{ "--pct": `${pct}%` }} />
+            </div>
             <div className="row"><span>Reorder level</span><strong>{i.reorder_level}</strong></div>
             <div className="row"><span>Used per day</span><strong>{i.daily_quantity}</strong></div>
             <div className="row"><span>Days remaining (estimate)</span><strong>{i.estimated_days_remaining ?? "—"}</strong></div>
@@ -51,7 +56,7 @@ export default function Inventory() {
             <button className="btn btn-block" style={{ marginTop: ".6rem" }} onClick={() => open(i)}>Mark as Purchased</button>
           </Card>
         );
-      })}
+      })}</div>}
 
       <Card icon="🧾" title="Purchase history">
         {buys.data && buys.data.purchases.length === 0 && <p className="muted">No purchases recorded yet.</p>}
