@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import useReminders from "../hooks/useReminders";
@@ -21,6 +21,15 @@ export default function Layout() {
   const { banners, dismiss } = useReminders();
   const nav = isAdmin ? ADMIN_NAV : FATHER_NAV;
 
+  // Dark glass look is the default for the family/admin; the father's screens stay light unless he chooses dark.
+  const [theme, setTheme] = useState(() => localStorage.getItem("fhc_theme") || (isAdmin ? "dark" : "light"));
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    localStorage.setItem("fhc_theme", next);
+    setTheme(next);
+  };
+
   return (
     <div className="app">
       <header className="topbar">
@@ -30,6 +39,9 @@ export default function Layout() {
         </div>
         <div className="topbar-right">
           {isAdmin && <span className="badge badge-info">Family</span>}
+          <button className="btn btn-ghost btn-small" onClick={toggleTheme} aria-label="Switch between dark and light look">
+            {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+          </button>
           <button className="btn btn-ghost btn-small" onClick={logout}>Sign out</button>
         </div>
       </header>
