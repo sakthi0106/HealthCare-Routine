@@ -29,12 +29,13 @@ def get_inventory(include_inactive: bool = False) -> list:
         if not m["active"] and not include_inactive:
             continue
         daily = m["daily_quantity"]
-        days = m["current_stock"] / daily if daily > 0 else None
+        per_day = daily / m["interval_days"]          # an alternate-day medicine uses half a day's amount per calendar day
+        days = m["current_stock"] / per_day if per_day > 0 else None
         state = stock_state(m["current_stock"], m["reorder_level"])
         item = {
             "medicine_id": m["medicine_id"], "medicine_name": m["medicine_name"], "dosage": m["dosage"],
             "current_stock": m["current_stock"], "reorder_level": m["reorder_level"],
-            "daily_quantity": daily, "active": m["active"], "state": state,
+            "daily_quantity": daily, "interval_days": m["interval_days"], "active": m["active"], "state": state,
             "estimated_days_remaining": round(days, 1) if days is not None else None,
             "run_out_date": (today + timedelta(days=int(days))).isoformat() if days is not None else None,
         }
