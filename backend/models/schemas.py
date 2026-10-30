@@ -58,6 +58,7 @@ class MedicineIn(BaseModel):
     start_date: str = ""
     end_date: str = ""
     active: bool = True
+    interval_days: int = Field(default=1, ge=1, le=30)   # 1 = every day, 2 = alternate days, 3 = every 3rd day ...
     notes: str = Field(default="", max_length=500)
 
     @field_validator("medicine_name", "generic_name", "dosage", "frequency", "notes", mode="before")
@@ -79,6 +80,8 @@ class MedicineIn(BaseModel):
     def _order(self):
         if self.start_date and self.end_date and self.end_date < self.start_date:
             raise ValueError("end date cannot be before the start date")
+        if self.interval_days > 1 and not self.start_date:
+            raise ValueError("choose the start date (the first day you take it) when it is not taken every day")
         return self
 
 
@@ -97,6 +100,7 @@ class MedicineUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     active: Optional[bool] = None
+    interval_days: Optional[int] = Field(default=None, ge=1, le=30)
     notes: Optional[str] = Field(default=None, max_length=500)
 
     @field_validator("morning_time", "afternoon_time", "evening_time", "night_time", mode="before")
