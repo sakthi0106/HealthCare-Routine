@@ -11,7 +11,6 @@ SHEETS = {
         "daily_quantity", "current_stock", "reorder_level",
         "start_date", "end_date", "active", "notes", "interval_days",
     ],
-    "Medicine_Log"
     "Medicine_Log": [
         "log_id", "date", "medicine_id", "medicine_name",
         "scheduled_time", "status", "taken_time", "notes",
@@ -36,7 +35,6 @@ SHEETS = {
     "Push_Subscriptions": ["endpoint", "p256dh", "auth", "role", "created_at"],
     "Notification_Log": ["notification_id", "sent_at"],
 }
-
 # Placeholders ONLY - set real values from the doctor's instructions in the app.
 DEFAULT_SETTINGS = {
     "water_target_ml": "2500",
