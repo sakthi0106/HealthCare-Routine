@@ -70,6 +70,7 @@ def _med_from_row(r) -> dict:
         "start_date": s.isoformat() if s else "",
         "end_date": e.isoformat() if e else "",
         "active": _bool(r["active"]),
+        "interval_days": max(1, int(_num(r.get("interval_days", ""), 1) or 1)),   # blank = every day
         "notes": r["notes"],
     }
 
@@ -112,6 +113,8 @@ def update_medicine(medicine_id: str, updates: dict) -> dict:
         merged = {**current, **clean}
         if merged["start_date"] and merged["end_date"] and merged["end_date"] < merged["start_date"]:
             raise AppError("The end date cannot be before the start date.", 400)
+        if merged.get("interval_days", 1) > 1 and not merged["start_date"]:
+            raise AppError("Choose the start date (the first day you take it) when it is not taken every day.", 400)
         if clean:
             get_store().update("Medicines", "medicine_id", medicine_id, _med_row(clean))
         return get_medicine(medicine_id)
@@ -127,7 +130,12 @@ def _scheduled_on(med: dict, d) -> bool:
     if not med["active"]:
         return False
     s, e = tu.parse_date(med["start_date"]), tu.parse_date(med["end_date"])
-    return not ((s and d < s) or (e and d > e))
+    if (s and d < s) or (e and d > e):
+        return False
+    n = med.get("interval_days", 1)
+    if n > 1 and s:                       # alternate days etc.: counted from the start date
+        return (d - s).days % n == 0
+    return True
 
 
 def _slots_of(med: dict) -> list:
