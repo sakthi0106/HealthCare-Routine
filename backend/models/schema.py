@@ -9,8 +9,9 @@ SHEETS = {
         "medicine_id", "medicine_name", "generic_name", "dosage", "frequency",
         "morning_time", "afternoon_time", "evening_time", "night_time",
         "daily_quantity", "current_stock", "reorder_level",
-        "start_date", "end_date", "active", "notes",
+        "start_date", "end_date", "active", "notes", "interval_days",
     ],
+    "Medicine_Log"
     "Medicine_Log": [
         "log_id", "date", "medicine_id", "medicine_name",
         "scheduled_time", "status", "taken_time", "notes",
