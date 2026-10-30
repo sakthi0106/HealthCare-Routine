@@ -94,13 +94,21 @@ class GoogleStore(Store):
     @staticmethod
     def _ensure_tabs(book) -> None:
         """Adds any tab that a newer version of the app needs, so upgrades just work."""
-        existing = {ws.title for ws in book.worksheets()}
+        existing = {ws.title: ws for ws in book.worksheets()}
         for name, columns in SHEETS.items():
             if name not in existing:
                 ws = book.add_worksheet(title=name, rows=1000, cols=len(columns))
                 ws.update(values=[columns], range_name="A1", raw=True)
                 ws.freeze(rows=1)
                 log.info("Created missing sheet tab: %s", name)
+                continue
+            # tab exists: add any column a newer version of the app needs (e.g. interval_days)
+            header = [str(h).strip() for h in existing[name].row_values(1)]
+            missing = [c for c in columns if c not in header]
+            if missing:
+                start = gspread.utils.rowcol_to_a1(1, len(header) + 1)
+                existing[name].update(values=[missing], range_name=start, raw=True)
+                log.info("Added missing columns %s to %s", missing, name)
 
     def _ws(self, name: str):
         if name not in self._worksheets:
