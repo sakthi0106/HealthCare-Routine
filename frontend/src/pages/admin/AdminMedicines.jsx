@@ -3,11 +3,23 @@ import useFetch from "../../hooks/useFetch";
 import { api } from "../../services/api";
 import { useToast } from "../../hooks/useToast";
 import { Card, Check, ErrorBox, Field, Loading, Modal, TimeField } from "../../components/ui";
-import { fmtTime } from "../../utils/format";
+import { fmtDate, fmtTime, todayISO } from "../../utils/format";
+
+// "Every 2 days · next 8 October 2026" - works out the next dose day from the start date
+const toUTC = (iso) => { const [y, mo, d] = iso.split("-").map(Number); return Date.UTC(y, mo - 1, d); };
+const fromUTC = (ms) => new Date(ms).toISOString().slice(0, 10);
+function repeatText(m) {
+  const n = m.interval_days || 1;
+  if (n <= 1) return "Every day";
+  if (!m.start_date) return `Every ${n} days`;
+  const diff = Math.round((toUTC(todayISO()) - toUTC(m.start_date)) / 86400000);
+  const wait = diff < 0 ? -diff : (n - (diff % n)) % n;
+  return `Every ${n} days · ${wait === 0 ? "today" : "next " + fmtDate(fromUTC(toUTC(todayISO()) + wait * 86400000))}`;
+}
 
 const EMPTY = { medicine_name: "", generic_name: "", dosage: "", frequency: "", morning_time: "", afternoon_time: "",
   evening_time: "", night_time: "", daily_quantity: "", current_stock: "", reorder_level: "", start_date: "", end_date: "",
-  active: true, notes: "" };
+  active: true, notes: "", interval_days: 1 };
 const NUMBERS = ["daily_quantity", "current_stock", "reorder_level"];
 
 export default function AdminMedicines() {
@@ -24,6 +36,11 @@ export default function AdminMedicines() {
   const save = async () => {
     const body = { ...form };
     NUMBERS.forEach((k) => (body[k] = body[k] === "" ? 0 : Number(body[k])));
+    body.interval_days = Number(body.interval_days) || 1;
+    if (body.interval_days > 1 && !body.start_date) {
+      toast("Choose the start date: the first day this medicine is taken.", "error");
+      return;
+    }
     delete body.medicine_id; delete body.dose_quantity;
     setBusy(true);
     try {
@@ -65,6 +82,7 @@ export default function AdminMedicines() {
           <div className="row"><span>Dosage</span><strong>{m.dosage || "—"}</strong></div>
           <div className="row"><span>Times</span><strong>{[["Morning", m.morning_time], ["Afternoon", m.afternoon_time], ["Evening", m.evening_time], ["Night", m.night_time]].filter(([, t]) => t).map(([n, t]) => `${n} ${fmtTime(t)}`).join(" · ") || "—"}</strong></div>
           <div className="row"><span>Per day</span><strong>{m.daily_quantity}</strong></div>
+          <div className="row"><span>Repeats</span><strong>{repeatText(m)}</strong></div>
           <div className="row"><span>Stock / reorder at</span><strong>{m.current_stock} / {m.reorder_level}</strong></div>
           <div className="btn-row">
             <button className="btn btn-outline" onClick={() => openEdit(m)}>Edit</button>
@@ -94,6 +112,20 @@ export default function AdminMedicines() {
             <Field label="Current stock"><input type="number" inputMode="decimal" min="0" step="0.5" value={form.current_stock} onChange={set("current_stock")} /></Field>
             <Field label="Reorder level" hint="Warn at or below this"><input type="number" inputMode="decimal" min="0" value={form.reorder_level} onChange={set("reorder_level")} /></Field>
           </div>
+          <Field label="How often is it taken?" hint='For alternate days choose "Every 2nd day", then set the Start date below to the first day it is taken.'>
+            <select value={form.interval_days} onChange={set("interval_days")}>
+              <option value={1}>Every day</option>
+              <option value={2}>Every 2nd day (alternate days)</option>
+              <option value={3}>Every 3rd day</option>
+              <option value={4}>Every 4th day</option>
+              <option value={5}>Every 5th day</option>
+              <option value={6}>Every 6th day</option>
+              <option value={7}>Once a week</option>
+              <option value={10}>Every 10th day</option>
+              <option value={14}>Every 2 weeks</option>
+              <option value={30}>Every 30 days</option>
+            </select>
+          </Field>
           <div className="grid2">
             <Field label="Start date"><input type="date" value={form.start_date} onChange={set("start_date")} /></Field>
             <Field label="End date"><input type="date" value={form.end_date} onChange={set("end_date")} /></Field>
