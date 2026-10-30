@@ -27,6 +27,7 @@ from utils.errors import AppError
 log = logging.getLogger("store")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 CACHE_SECONDS = 8
+OPTIONAL_COLUMNS = {"interval_days"}   # the app still works (every-day medicines) if one of these is missing from the Sheet
 
 
 class Store:
@@ -103,12 +104,19 @@ class GoogleStore(Store):
                 log.info("Created missing sheet tab: %s", name)
                 continue
             # tab exists: add any column a newer version of the app needs (e.g. interval_days)
-            header = [str(h).strip() for h in existing[name].row_values(1)]
-            missing = [c for c in columns if c not in header]
-            if missing:
-                start = gspread.utils.rowcol_to_a1(1, len(header) + 1)
-                existing[name].update(values=[missing], range_name=start, raw=True)
-                log.info("Added missing columns %s to %s", missing, name)
+            ws = existing[name]
+            try:
+                header = [str(h).strip() for h in ws.row_values(1)]
+                missing = [c for c in columns if c not in header]
+                if missing:
+                    needed = len(header) + len(missing)
+                    if ws.col_count < needed:                    # the tab has no free column left: add some first
+                        ws.add_cols(needed - ws.col_count)
+                    start = gspread.utils.rowcol_to_a1(1, len(header) + 1)
+                    ws.update(values=[missing], range_name=start, raw=True)
+                    log.info("Added missing columns %s to %s", missing, name)
+            except Exception:  # noqa: BLE001 - an optional upgrade must never take the whole app down
+                log.exception("Could not add missing columns to %s", name)
 
     def _ws(self, name: str):
         if name not in self._worksheets:
@@ -126,7 +134,7 @@ class GoogleStore(Store):
         for name, value_range in zip(SHEETS, response.get("valueRanges", [])):
             rows = value_range.get("values", [])
             header = [str(h).strip() for h in rows[0]] if rows else []
-            missing = [c for c in SHEETS[name] if c not in header]
+            missing = [c for c in SHEETS[name] if c not in header and c not in OPTIONAL_COLUMNS]
             if missing:
                 log.error("Sheet %s is missing columns %s - run scripts.setup_sheets", name, missing)
                 raise AppError("The Google Sheet is not set up correctly. Please contact the family admin.", 500)
