@@ -231,3 +231,10 @@ html:not([data-theme="dark"]) .gauge { background: rgba(31, 60, 110, .12); }
 [data-theme="dark"] .toast-ok { color: #04201a; }
 [data-theme="dark"] .toast-error { background: #ff8fa3; color: #2b000a; }
 [data-theme="dark"] .check input { accent-color: var(--primary); }
+
+/* ---- icons and dashboard ---- */
+.icon { flex: none; vertical-align: -0.2em; }
+.card-title .card-icon { display: inline-flex; vertical-align: middle; color: var(--primary-dark); margin-right: .15rem; }
+.nav-icon { display: inline-flex; line-height: 1; }
+.tab { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+.dash-heading { font-size: .95rem; color: var(--muted); font-weight: 700; margin: .4rem 0 .3rem; }
