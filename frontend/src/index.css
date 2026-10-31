@@ -160,3 +160,74 @@ html:not([data-theme="dark"]) .gauge { background: rgba(31, 60, 110, .12); }
 .live-dot.off { background: var(--muted); animation: none; }
 @keyframes live-dot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+/* ===================== Glass dark theme + dashboard extras ===================== */
+/* Stats banner, card grid, stock gauge and pulsing low-stock badge (work in light and dark) */
+.stats-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+.stat-tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem 1rem; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.stat-label { color: var(--muted); font-size: .78rem; }
+.stat-value { font-size: 1.6rem; font-weight: 800; line-height: 1.2; }
+.stat-tile.warn .stat-value { color: var(--warn); }
+.stat-value.small { font-size: 1rem; font-weight: 700; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
+.cards-grid .card { margin-bottom: 0; }
+.gauge { height: 10px; border-radius: 99px; background: rgba(128, 140, 160, .28); overflow: hidden; margin: .5rem 0; }
+.gauge > i { display: block; height: 100%; width: var(--pct); background: var(--g); border-radius: 99px; box-shadow: 0 0 10px var(--g); transition: width .6s; }
+.g-ok { --g: var(--ok); } .g-low { --g: var(--warn); } .g-out { --g: var(--danger); }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 176, 32, .55); } 70% { box-shadow: 0 0 0 10px rgba(255, 176, 32, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0); } }
+.badge-pulse { animation: pulse 1.8s infinite; }
+@media (prefers-reduced-motion: reduce) { .badge-pulse { animation: none; } }
+@media (min-width: 1100px) { .main { max-width: 1000px; } }
+
+/* Dark mode: same layout, glass cards, neon accents, high contrast text */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1020; --card: rgba(255, 255, 255, .07); --text: #eef2ff; --muted: #a9b6d6; --line: rgba(255, 255, 255, .16);
+  --primary: #34f5a5; --primary-dark: #7dffc9;
+  --ok: #34f5a5; --ok-bg: rgba(52, 245, 165, .14);
+  --warn: #ffc04d; --warn-bg: rgba(255, 176, 32, .14);
+  --danger: #ff8fa3; --danger-bg: rgba(255, 77, 109, .16);
+  --info: #9cc6ff; --info-bg: rgba(110, 168, 255, .16);
+}
+[data-theme="dark"] body {
+  background: radial-gradient(1100px 600px at 8% -10%, #1b2b66 0%, transparent 60%),
+              radial-gradient(900px 500px at 100% 0%, #0d5c4a 0%, transparent 55%), var(--bg);
+  background-attachment: fixed;
+}
+[data-theme="dark"] .topbar { background: rgba(11, 16, 32, .72); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); color: var(--text); }
+[data-theme="dark"] .topbar .btn-ghost { color: var(--text); border-color: var(--line); }
+[data-theme="dark"] .nav { background: rgba(11, 16, 32, .78); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-color: var(--line); }
+[data-theme="dark"] .nav-item.active { background: rgba(52, 245, 165, .12); color: var(--primary-dark); }
+[data-theme="dark"] .card, [data-theme="dark"] .stat-tile { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 30px rgba(0, 0, 0, .25); }
+[data-theme="dark"] .card-warn { background: rgba(255, 176, 32, .1); border-color: rgba(255, 176, 32, .55); }
+[data-theme="dark"] .sheet { background: rgba(18, 26, 51, .96); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--line); }
+[data-theme="dark"] input[type=text], [data-theme="dark"] input[type=password], [data-theme="dark"] input[type=number],
+[data-theme="dark"] input[type=date], [data-theme="dark"] input[type=time], [data-theme="dark"] input[type=tel],
+[data-theme="dark"] select, [data-theme="dark"] textarea { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .3); color: var(--text); }
+[data-theme="dark"] select option { background: #121a33; color: #eef2ff; }
+[data-theme="dark"] .btn { background: #6ea8ff; border-color: #6ea8ff; color: #04132b; }
+[data-theme="dark"] .btn:hover { background: #93bdff; }
+[data-theme="dark"] .btn-ok { background: #34f5a5; border-color: #34f5a5; color: #04201a; }
+[data-theme="dark"] .btn-ok:hover { background: #6dffc3; }
+[data-theme="dark"] .btn-danger { background: #ff8fa3; border-color: #ff8fa3; color: #2b000a; }
+[data-theme="dark"] .btn-outline { background: transparent; color: var(--text); border-color: rgba(255, 255, 255, .38); }
+[data-theme="dark"] .btn-outline:hover { background: rgba(255, 255, 255, .09); }
+[data-theme="dark"] .btn-ghost { color: var(--text); border-color: var(--line); }
+[data-theme="dark"] .btn:disabled { opacity: .45; }
+[data-theme="dark"] .progress { background: rgba(255, 255, 255, .13); }
+[data-theme="dark"] .progress-fill { box-shadow: 0 0 12px var(--primary); }
+[data-theme="dark"] .badge-muted { background: rgba(255, 255, 255, .1); color: var(--muted); }
+[data-theme="dark"] .alert-warn { color: var(--warn); border-color: rgba(255, 176, 32, .6); }
+[data-theme="dark"] .alert-danger { border-color: rgba(255, 77, 109, .6); }
+[data-theme="dark"] .alert-info { border-color: rgba(110, 168, 255, .5); }
+[data-theme="dark"] .tab { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--line); }
+[data-theme="dark"] .tab.active { background: var(--primary); color: #04201a; border-color: var(--primary); }
+[data-theme="dark"] .tile { background: rgba(255, 255, 255, .07); }
+[data-theme="dark"] tbody tr:hover { background: rgba(110, 168, 255, .07); }
+[data-theme="dark"] .bubble-assistant { background: rgba(255, 255, 255, .1); }
+[data-theme="dark"] .bubble-user { background: var(--primary); color: #04201a; }
+[data-theme="dark"] .chip { background: rgba(255, 255, 255, .06); color: var(--text); border-color: var(--primary); }
+[data-theme="dark"] .fab { background: #6ea8ff; color: #04132b; }
+[data-theme="dark"] .toast-ok { color: #04201a; }
+[data-theme="dark"] .toast-error { background: #ff8fa3; color: #2b000a; }
+[data-theme="dark"] .check input { accent-color: var(--primary); }
