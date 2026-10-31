@@ -1,6 +1,13 @@
 // Small reusable pieces: Card, ProgressBar, Modal, StatusBadge, Loading/Error, Field, BarChart, Disclaimer.
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Icon, { iconForEmoji } from "./Icon";
+
+// Older screens pass an emoji; it is swapped for the matching clean SVG icon (or kept if there is none).
+function CardIcon({ icon }) {
+  const name = iconForEmoji(icon);
+  return <span className="card-icon" aria-hidden="true">{name ? <Icon name={name} size={24} /> : icon}</span>;
+}
 
 export function Card({ icon, title, to, children, tone }) {
   return (
@@ -8,11 +15,11 @@ export function Card({ icon, title, to, children, tone }) {
       <h2 className="card-title">
         {to ? (
           <Link to={to}>
-            <span aria-hidden="true">{icon}</span> {title} <span className="chev" aria-hidden="true">›</span>
+            <span><CardIcon icon={icon} /> {title}</span> <span className="chev" aria-hidden="true">›</span>
           </Link>
         ) : (
           <>
-            <span aria-hidden="true">{icon}</span> {title}
+            <CardIcon icon={icon} /> {title}
           </>
         )}
       </h2>
