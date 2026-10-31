@@ -2,9 +2,11 @@ import useFetch from "../hooks/useFetch";
 import { Card, ErrorBox, Loading, ProgressBar, StatusBadge } from "../components/ui";
 import { SessionActions } from "../components/DoseActions";
 import { fmtTime } from "../utils/format";
+import { RespirometerChart } from "../components/charts";
 
 export default function Respirometer() {
   const { data, error, reload } = useFetch("/api/respirometer/today", { interval: 60000 });
+  const week = useFetch("/api/history?range=last7&parts=respirometer", { interval: 60000 });
   if (!data) return error ? <ErrorBox message={error} onRetry={reload} /> : <Loading />;
 
   const freq = data.settings.frequency_minutes;
@@ -34,6 +36,11 @@ export default function Respirometer() {
           {["due", "snoozed", "upcoming"].includes(s.state) && <SessionActions session={s} onDone={reload} />}
         </Card>
       ))}
+      {week.data && (
+        <Card icon="📈" title="Last 7 days">
+          <RespirometerChart days={week.data.respirometer.days} />
+        </Card>
+      )}
     </>
   );
 }
