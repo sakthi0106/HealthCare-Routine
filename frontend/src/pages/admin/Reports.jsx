@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { Card, ErrorBox, Loading } from "../../components/ui";
-import LiveChart from "../../components/LiveChart";
+import { MedicineChart, RespirometerChart, TodayProgressChart, WalkingChart, WaterChart } from "../../components/charts";
 import { fmtDate, fmtMl } from "../../utils/format";
 
 const VIEWS = [["today", "Daily"], ["week", "Weekly"], ["last30", "Monthly"]];
 const LIVE_MS = 15000; // how often the graphs refresh while "Live" is on
-const C = { ok: "#16a37a", warn: "#f0a020", muted: "#9aa7b8", blue: "#4f8df0" };
-
-const pct = (value, target) => (target > 0 ? Math.min(100, Math.round((value * 100) / target)) : 0);
-const dateAxis = (n) => ({ type: "date", tickformat: "%d %b", dtick: n <= 10 ? 86400000 : undefined });
 
 export default function Reports() {
   const [view, setView] = useState("today");
@@ -29,7 +25,7 @@ export default function Reports() {
 
   return (
     <>
-      <h1>📊 Reports</h1>
+      <h1>Reports</h1>
       <div className="tabs">
         {VIEWS.map(([k, label]) => <button key={k} className={`tab ${view === k ? "active" : ""}`} onClick={() => setView(k)}>{label}</button>)}
       </div>
@@ -51,7 +47,16 @@ export default function Reports() {
         <>
           <p className="muted">{h.start === h.end ? fmtDate(h.start) : `${fmtDate(h.start)} – ${fmtDate(h.end)}`}</p>
 
-          {!trend && <TodayProgress h={h} settings={settings} />}
+          {!trend && (
+            <Card icon="🎯" title="Today's progress">
+              <TodayProgressChart
+                medicines={{ taken: h.medicine.summary.taken, total: h.medicine.summary.scheduled }}
+                water={{ ml: h.water.total_ml, target: settings?.water_target_ml }}
+                walking={{ minutes: h.walking.total_minutes, target: settings?.walking_target_minutes }}
+                respirometer={{ completed: h.respirometer.summary.completed, total: h.respirometer.summary.scheduled }}
+              />
+            </Card>
+          )}
 
           <Card icon="💊" title="Medicines">
             <div className="tiles">
@@ -92,83 +97,5 @@ export default function Reports() {
         </>
       )}
     </>
-  );
-}
-
-/* ---------------- charts ---------------- */
-function TodayProgress({ h, settings }) {
-  const med = h.medicine.summary, resp = h.respirometer.summary;
-  const rows = [
-    ["Medicines", pct(med.taken, med.scheduled), `${med.taken} of ${med.scheduled} doses`, C.ok],
-    ["Water", pct(h.water.total_ml, settings?.water_target_ml), `${fmtMl(h.water.total_ml)} of ${fmtMl(settings?.water_target_ml || 0)}`, C.blue],
-    ["Walking", pct(h.walking.total_minutes, settings?.walking_target_minutes), `${Math.round(h.walking.total_minutes)} of ${settings?.walking_target_minutes ?? 0} min`, C.warn],
-    ["Respirometer", pct(resp.completed, resp.scheduled), `${resp.completed} of ${resp.scheduled} sessions`, C.ok],
-  ].reverse(); // Plotly draws horizontal bars bottom-up
-  return (
-    <Card icon="🎯" title="Today's progress">
-      <LiveChart
-        height={230}
-        data={[{
-          type: "bar", orientation: "h", x: rows.map((r) => r[1]), y: rows.map((r) => r[0]),
-          text: rows.map((r) => `${r[1]}%`), textposition: "auto", marker: { color: rows.map((r) => r[3]) },
-          customdata: rows.map((r) => r[2]), hovertemplate: "%{y}: %{customdata}<extra></extra>",
-        }]}
-        layout={{ xaxis: { range: [0, 100], ticksuffix: "%" }, margin: { l: 100, r: 18, t: 8, b: 36 }, showlegend: false }}
-      />
-    </Card>
-  );
-}
-
-function MedicineChart({ days }) {
-  const x = days.map((d) => d.date);
-  const max = Math.max(1, ...days.map((d) => d.scheduled));
-  return (
-    <LiveChart
-      data={[
-        { type: "bar", name: "Taken", x, y: days.map((d) => d.taken), marker: { color: C.ok }, hovertemplate: "%{x|%d %b}<br>Taken: %{y}<extra></extra>" },
-        { type: "bar", name: "Skipped", x, y: days.map((d) => d.skipped), marker: { color: C.warn }, hovertemplate: "%{x|%d %b}<br>Skipped: %{y}<extra></extra>" },
-        { type: "bar", name: "Not recorded", x, y: days.map((d) => Math.max(0, d.scheduled - d.taken - d.skipped)), marker: { color: C.muted }, hovertemplate: "%{x|%d %b}<br>Not recorded: %{y}<extra></extra>" },
-      ]}
-      layout={{ barmode: "stack", xaxis: dateAxis(days.length), yaxis: { title: "Doses", rangemode: "tozero", dtick: max <= 8 ? 1 : undefined } }}
-    />
-  );
-}
-
-function WaterChart({ days, target }) {
-  const x = days.map((d) => d.date);
-  const data = [
-    { type: "bar", name: "Water (litres)", x, y: days.map((d) => d.total_ml / 1000), marker: { color: C.blue }, hovertemplate: "%{x|%d %b}<br>%{y:.2f} L<extra></extra>" },
-  ];
-  if (target) data.push({ type: "scatter", mode: "lines", name: "Daily target", x, y: x.map(() => target / 1000), line: { color: C.warn, dash: "dash", width: 2 }, hovertemplate: "Target: %{y:.1f} L<extra></extra>" });
-  return <LiveChart data={data} layout={{ xaxis: dateAxis(days.length), yaxis: { title: "Litres", rangemode: "tozero" } }} />;
-}
-
-function WalkingChart({ days }) {
-  const x = days.map((d) => d.date);
-  return (
-    <LiveChart
-      data={[
-        { type: "bar", name: "Minutes", x, y: days.map((d) => Math.round(d.minutes)), marker: { color: C.warn }, hovertemplate: "%{x|%d %b}<br>%{y} min<extra></extra>" },
-        { type: "scatter", mode: "lines+markers", name: "Kilometres", x, y: days.map((d) => d.km), yaxis: "y2", line: { color: C.ok, width: 3 }, hovertemplate: "%{x|%d %b}<br>%{y} km<extra></extra>" },
-      ]}
-      layout={{
-        xaxis: dateAxis(days.length), yaxis: { title: "Minutes", rangemode: "tozero" },
-        yaxis2: { title: "km", overlaying: "y", side: "right", showgrid: false, rangemode: "tozero" }, margin: { l: 52, r: 52, t: 12, b: 56 },
-      }}
-    />
-  );
-}
-
-function RespirometerChart({ days }) {
-  const x = days.map((d) => d.date);
-  const max = Math.max(1, ...days.map((d) => d.scheduled));
-  return (
-    <LiveChart
-      data={[
-        { type: "bar", name: "Completed", x, y: days.map((d) => d.completed), marker: { color: C.ok }, hovertemplate: "%{x|%d %b}<br>Completed: %{y}<extra></extra>" },
-        { type: "scatter", mode: "lines+markers", name: "Scheduled", x, y: days.map((d) => d.scheduled), line: { color: C.muted, dash: "dot", width: 2 }, hovertemplate: "%{x|%d %b}<br>Scheduled: %{y}<extra></extra>" },
-      ]}
-      layout={{ xaxis: dateAxis(days.length), yaxis: { title: "Sessions", rangemode: "tozero", dtick: max <= 8 ? 1 : undefined } }}
-    />
   );
 }
