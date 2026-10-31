@@ -3,13 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
 import { useToast } from "../hooks/useToast";
-import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
+import { Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
+import { WaterChart } from "../components/charts";
 import { fmtMl, fmtShortDate, fmtTime } from "../utils/format";
 
 export default function Water() {
   const toast = useToast();
-  const today = useFetch("/api/water/today");
-  const hist = useFetch("/api/history?range=last30&parts=water");
+  const today = useFetch("/api/water/today", { interval: 30000 });
+  const hist = useFetch("/api/history?range=last30&parts=water", { interval: 60000 });
   const [params, setParams] = useSearchParams();
   const [custom, setCustom] = useState(params.get("custom") === "1");
   const [amount, setAmount] = useState("");
@@ -111,7 +112,7 @@ export default function Water() {
               <div className="tile"><b>{fmtMl(weeklyAvg)}</b><span>Daily average (last 7 days)</span></div>
               <div className="tile"><b>{fmtMl(hist.data.water.average_ml)}</b><span>Daily average (30 days)</span></div>
             </div>
-            <BarChart data={days.map((d) => ({ label: fmtShortDate(d.date), value: d.total_ml }))} format={(v) => (v / 1000).toFixed(1)} unit=" L" />
+            <WaterChart days={days} target={w?.target_ml} />
             <p className="small muted center">Litres per day, last 30 days</p>
           </>
         )}
