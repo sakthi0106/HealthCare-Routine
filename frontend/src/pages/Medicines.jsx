@@ -2,18 +2,19 @@ import { useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { Card, ErrorBox, Field, Loading, StatusBadge } from "../components/ui";
 import { DoseActions } from "../components/DoseActions";
+import { MedicineChart } from "../components/charts";
 import { SLOT_ICON, cap, fmtShortDate, fmtTime, todayISO } from "../utils/format";
 
 const RANGES = [["today", "Today"], ["week", "This Week"], ["month", "This Month"], ["custom", "Custom"]];
 
 export default function Medicines() {
-  const today = useFetch("/api/medicines/today");
+  const today = useFetch("/api/medicines/today", { interval: 30000 });
   const [range, setRange] = useState("today");
   const [start, setStart] = useState(todayISO());
   const [end, setEnd] = useState(todayISO());
   const ready = range !== "custom" || (start && end);
   const url = `/api/history?range=${range}&parts=medicine${range === "custom" ? `&start=${start}&end=${end}` : ""}`;
-  const hist = useFetch(url, { enabled: !!ready });
+  const hist = useFetch(url, { enabled: !!ready, interval: 60000 });
 
   const refresh = () => { today.reload(); hist.reload(); };
   const doses = today.data?.items || [];
@@ -63,6 +64,7 @@ export default function Medicines() {
               <div className="tile"><b>{hist.data.medicine.summary.taken}</b><span>Taken</span></div>
               <div className="tile"><b>{hist.data.medicine.summary.skipped}</b><span>Skipped</span></div>
             </div>
+            {hist.data.medicine.days.length > 1 && <MedicineChart days={hist.data.medicine.days} />}
             <p className="small muted">A record of what was marked in the app. It is not a medical assessment.</p>
             <div className="table-wrap">
               <table>
