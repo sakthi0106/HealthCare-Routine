@@ -3,15 +3,16 @@ import { useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
 import { useToast } from "../hooks/useToast";
-import { BarChart, Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
+import { Card, ErrorBox, Field, Loading, Modal, ProgressBar, TimeField } from "../components/ui";
+import { WalkingChart } from "../components/charts";
 import { fmtShortDate, fmtTime, todayISO } from "../utils/format";
 
 const EMPTY = { date: todayISO(), start_time: "", end_time: "", duration_minutes: "", distance_km: "", notes: "" };
 
 export default function Walking() {
   const toast = useToast();
-  const today = useFetch("/api/walking/today");
-  const hist = useFetch("/api/history?range=last30&parts=walking");
+  const today = useFetch("/api/walking/today", { interval: 30000 });
+  const hist = useFetch("/api/history?range=last30&parts=walking", { interval: 60000 });
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState(params.get("add") === "1");
   const [form, setForm] = useState(EMPTY);
@@ -111,7 +112,7 @@ export default function Walking() {
               <div className="tile"><b>{Math.round(hist.data.walking.total_minutes)} min</b><span>Total time</span></div>
               <div className="tile"><b>{hist.data.walking.total_km} km</b><span>Total distance</span></div>
             </div>
-            <BarChart data={days.map((d) => ({ label: fmtShortDate(d.date), value: Math.round(d.minutes) }))} unit=" min" />
+            <WalkingChart days={days} />
             <p className="small muted center">Minutes walked per day</p>
           </>
         )}
