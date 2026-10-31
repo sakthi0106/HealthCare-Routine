@@ -4,15 +4,16 @@ import { useAuth } from "../hooks/useAuth";
 import useReminders from "../hooks/useReminders";
 import AIChat from "./AIChat";
 import { Disclaimer } from "./ui";
+import Icon from "./Icon";
 import { fmtDate, todayISO } from "../utils/format";
 
 const FATHER_NAV = [
-  ["/", "🏠", "Home"], ["/medicines", "💊", "Pills"], ["/water", "💧", "Water"],
-  ["/walking", "🚶", "Walk"], ["/respirometer", "🫁", "Breathe"], ["/appointments", "🏥", "Doctor"],
+  ["/", "home", "Home"], ["/medicines", "pill", "Pills"], ["/water", "droplet", "Water"],
+  ["/walking", "footprints", "Walk"], ["/respirometer", "wind", "Breathe"], ["/appointments", "stethoscope", "Doctor"],
 ];
 const ADMIN_NAV = [
-  ["/", "🏠", "Home"], ["/admin/medicines", "💊", "Medicines"], ["/admin/inventory", "📦", "Stock"],
-  ["/admin/appointments", "🏥", "Visits"], ["/admin/reports", "📊", "Reports"], ["/admin/settings", "⚙️", "Settings"],
+  ["/", "home", "Home"], ["/admin/medicines", "pill", "Medicines"], ["/admin/inventory", "package", "Stock"],
+  ["/admin/appointments", "calendar", "Visits"], ["/admin/reports", "bar-chart", "Reports"], ["/admin/settings", "sliders", "Settings"],
 ];
 
 export default function Layout() {
@@ -40,7 +41,7 @@ export default function Layout() {
         <div className="topbar-right">
           {isAdmin && <span className="badge badge-info">Family</span>}
           <button className="btn btn-ghost btn-small" onClick={toggleTheme} aria-label="Switch between dark and light look">
-            {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={18} /> {theme === "dark" ? "Light" : "Dark"}
           </button>
           <button className="btn btn-ghost btn-small" onClick={logout}>Sign out</button>
         </div>
@@ -49,7 +50,7 @@ export default function Layout() {
       <nav className="nav" aria-label="Main">
         {nav.map(([to, icon, label]) => (
           <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
-            <span className="nav-icon" aria-hidden="true">{icon}</span>
+            <span className="nav-icon" aria-hidden="true"><Icon name={icon} size={26} /></span>
             <span>{label}</span>
           </NavLink>
         ))}
