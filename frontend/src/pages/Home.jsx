@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import { Card, ErrorBox, Loading, ProgressBar, StatusBadge } from "../components/ui";
 import { DoseActions, SessionActions } from "../components/DoseActions";
 import ReminderSetup from "../components/ReminderSetup";
+import DashboardCharts from "../components/DashboardCharts";
 import { useAuth } from "../hooks/useAuth";
 import { SLOT_ICON, cap, fmtDate, fmtMl, fmtShortDate, fmtTime } from "../utils/format";
 
@@ -141,6 +142,8 @@ export default function Home() {
           <p className="muted">No upcoming appointments.</p>
         )}
       </Card>
+
+      <DashboardCharts today={d} isAdmin={isAdmin} />
 
       <Card icon="📦" title="Medicine Stock" tone={low.length ? "warn" : undefined}>
         <StockList />
