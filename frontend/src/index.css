@@ -528,6 +528,32 @@ tbody tr:hover { background: rgba(13,148,136,.04); }
 .time12 { display: flex; align-items: center; gap: .4rem; }
 .time12 select { flex: 1; min-width: 0; padding-left: .5rem; padding-right: .3rem; }
 
+/* ── Blood Sugar Summary Tiles ───────────────────────────── */
+.sugar-summary-tile {
+  border-radius: 12px;
+  padding: .75rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  border: 1.5px solid transparent;
+}
+.fbs-tile  { background: rgba(249,115,22,.08); border-color: rgba(249,115,22,.25); }
+.ppbs-tile { background: rgba(139,92,246,.08); border-color: rgba(139,92,246,.25); }
+.sugar-tile-label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.sugar-tile-value { font-size: 1.35rem; font-weight: 800; line-height: 1.2; }
+.fbs-tile  .sugar-tile-value { color: #ea580c; }
+.ppbs-tile .sugar-tile-value { color: #7c3aed; }
+.sugar-tile-sub   { font-size: .7rem; color: var(--muted); }
+.badge-fbs  { background: rgba(249,115,22,.15); color: #c2410c; }
+.badge-ppbs { background: rgba(139,92,246,.15); color: #6d28d9; }
+
+[data-theme="dark"] .fbs-tile  { background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
+[data-theme="dark"] .ppbs-tile { background: rgba(139,92,246,.1); border-color: rgba(139,92,246,.3); }
+[data-theme="dark"] .fbs-tile  .sugar-tile-value { color: #fb923c; }
+[data-theme="dark"] .ppbs-tile .sugar-tile-value { color: #a78bfa; }
+[data-theme="dark"] .badge-fbs  { background: rgba(249,115,22,.2); color: #fdba74; }
+[data-theme="dark"] .badge-ppbs { background: rgba(139,92,246,.2); color: #c4b5fd; }
+
 /* ── Logout button responsive ────────────────────────────── */
 .logout-icon { display: none; }
 @media (max-width: 480px) {

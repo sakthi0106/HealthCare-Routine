@@ -172,13 +172,83 @@ export function RespirometerChart({ days }) {
   return <div style={{ height: 300 }}><Bar data={data} options={opts} /></div>;
 }
 
-// ── Blood Sugar Chart – Measurements & Trends ─────────────────────────────────
-export function BloodSugarChart({ days = [], logs = [] }) {
-  const labels = days.map((d) => formatDate(d.date));
-  const avgData = days.map((d) => d.average || null);
+// ── Blood Sugar Chart – FBS / PPBS Trends & Full Report ──────────────────────
+const FBS_CONTEXTS  = ["Fasting"];
+const PPBS_CONTEXTS = ["Post Lunch (2 hrs)", "Post Dinner (2 hrs)", "Post Breakfast (2 hrs)"];
 
-  const datasets = [
-    {
+function isFBS(ctx)  { return FBS_CONTEXTS.some((c) => ctx?.toLowerCase().includes(c.toLowerCase()) || ctx === "FBS"); }
+function isPPBS(ctx) { return PPBS_CONTEXTS.some((c) => ctx?.toLowerCase().includes(c.toLowerCase()) || ctx === "PPBS"); }
+
+function sugarBadge(ctx, level) {
+  const v = Number(level);
+  if (isFBS(ctx)) {
+    if (v < 70)   return { cls: "badge-danger", text: "Low" };
+    if (v <= 99)  return { cls: "badge-ok",     text: "Normal" };
+    if (v <= 125) return { cls: "badge-warn",   text: "Pre-diabetic" };
+    return          { cls: "badge-danger",       text: "High" };
+  }
+  if (isPPBS(ctx)) {
+    if (v < 140)  return { cls: "badge-ok",   text: "Normal" };
+    if (v < 200)  return { cls: "badge-warn", text: "Elevated" };
+    return          { cls: "badge-danger",    text: "High" };
+  }
+  // generic
+  if (v < 70)  return { cls: "badge-danger", text: "Low" };
+  if (v <= 140)return { cls: "badge-ok",     text: "Normal" };
+  return         { cls: "badge-warn",         text: "High" };
+}
+
+export function BloodSugarChart({ days = [], logs = [] }) {
+  const labels   = days.map((d) => formatDate(d.date));
+
+  // Separate FBS and PPBS per day
+  const fbsData  = days.map((d) => {
+    const vals = (d.readings || []).filter((r) => isFBS(r.meal_context)).map((r) => Number(r.glucose_level)).filter(Boolean);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  });
+  const ppbsData = days.map((d) => {
+    const vals = (d.readings || []).filter((r) => isPPBS(r.meal_context)).map((r) => Number(r.glucose_level)).filter(Boolean);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  });
+  const avgData  = days.map((d) => d.average || null);
+
+  const hasFBS  = fbsData.some(Boolean);
+  const hasPPBS = ppbsData.some(Boolean);
+
+  const datasets = [];
+
+  if (hasFBS) {
+    datasets.push({
+      label: "FBS – Fasting (mg/dL)",
+      data: fbsData,
+      type: "line",
+      borderColor: "#f97316",
+      backgroundColor: "rgba(249,115,22,0.12)",
+      borderWidth: 2.5,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "#f97316",
+      fill: false,
+      spanGaps: true,
+    });
+  }
+  if (hasPPBS) {
+    datasets.push({
+      label: "PPBS – Post Meal (mg/dL)",
+      data: ppbsData,
+      type: "line",
+      borderColor: "#8b5cf6",
+      backgroundColor: "rgba(139,92,246,0.12)",
+      borderWidth: 2.5,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: "#8b5cf6",
+      fill: false,
+      spanGaps: true,
+    });
+  }
+  if (!hasFBS && !hasPPBS && avgData.some(Boolean)) {
+    datasets.push({
       label: "Daily Avg Glucose (mg/dL)",
       data: avgData,
       type: "line",
@@ -189,28 +259,30 @@ export function BloodSugarChart({ days = [], logs = [] }) {
       pointHoverRadius: 6,
       fill: true,
       spanGaps: true,
-    },
-    {
-      label: "Normal Max (140)",
-      data: days.map(() => 140),
-      type: "line",
-      borderColor: "rgba(239, 68, 68, 0.4)",
-      borderDash: [5, 4],
-      borderWidth: 1.5,
-      pointRadius: 0,
-      fill: false,
-    },
-    {
-      label: "Normal Min (70)",
-      data: days.map(() => 70),
-      type: "line",
-      borderColor: "rgba(59, 130, 246, 0.4)",
-      borderDash: [5, 4],
-      borderWidth: 1.5,
-      pointRadius: 0,
-      fill: false,
-    },
-  ];
+    });
+  }
+
+  // Reference lines
+  datasets.push({
+    label: "FBS Normal Max (99)",
+    data: days.map(() => 99),
+    type: "line",
+    borderColor: "rgba(249,115,22,0.35)",
+    borderDash: [4, 4],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+  });
+  datasets.push({
+    label: "PPBS Normal Max (140)",
+    data: days.map(() => 140),
+    type: "line",
+    borderColor: "rgba(139,92,246,0.35)",
+    borderDash: [4, 4],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+  });
 
   const opts = {
     ...BASE_OPTS,
@@ -219,43 +291,89 @@ export function BloodSugarChart({ days = [], logs = [] }) {
       y: {
         ...BASE_OPTS.scales.y,
         min: 40,
-        suggestedMax: 200,
+        suggestedMax: 220,
         title: { display: true, text: "mg/dL" },
       },
     },
+    plugins: {
+      ...BASE_OPTS.plugins,
+      legend: { display: true, position: "top", labels: { boxWidth: 14, font: { size: 11 } } },
+    },
   };
+
+  // Sort logs newest first for the table
+  const sortedLogs = [...logs].sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
 
   return (
     <div>
       <div style={{ height: 300 }}><Line data={{ labels, datasets }} options={opts} /></div>
-      {logs.length > 0 && (
-        <div style={{ marginTop: "1rem" }}>
-          <p className="small muted" style={{ fontWeight: 700, marginBottom: ".4rem" }}>Recent Blood Sugar Readings:</p>
+
+      {/* ── FBS / PPBS Summary Tiles ── */}
+      {logs.length > 0 && (() => {
+        const fbsLogs  = logs.filter((l) => isFBS(l.meal_context));
+        const ppbsLogs = logs.filter((l) => isPPBS(l.meal_context));
+        const avg = (arr) => arr.length ? Math.round(arr.reduce((s, l) => s + Number(l.glucose_level), 0) / arr.length) : null;
+        const latest = (arr) => arr.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))[0];
+        const fbsAvg  = avg(fbsLogs);
+        const ppbsAvg = avg(ppbsLogs);
+        const latestFBS  = latest([...fbsLogs]);
+        const latestPPBS = latest([...ppbsLogs]);
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".6rem", margin: ".9rem 0 .3rem" }}>
+            <div className="sugar-summary-tile fbs-tile">
+              <div className="sugar-tile-label">🟠 FBS (Fasting)</div>
+              <div className="sugar-tile-value">{latestFBS ? `${latestFBS.glucose_level} mg/dL` : "—"}</div>
+              <div className="sugar-tile-sub">Latest · Avg: {fbsAvg ?? "—"} mg/dL · {fbsLogs.length} reading{fbsLogs.length !== 1 ? "s" : ""}</div>
+              {latestFBS && (() => { const s = sugarBadge(latestFBS.meal_context, latestFBS.glucose_level); return <span className={`badge ${s.cls}`}>{s.text}</span>; })()}
+            </div>
+            <div className="sugar-summary-tile ppbs-tile">
+              <div className="sugar-tile-label">🟣 PPBS (Post Meal)</div>
+              <div className="sugar-tile-value">{latestPPBS ? `${latestPPBS.glucose_level} mg/dL` : "—"}</div>
+              <div className="sugar-tile-sub">Latest · Avg: {ppbsAvg ?? "—"} mg/dL · {ppbsLogs.length} reading{ppbsLogs.length !== 1 ? "s" : ""}</div>
+              {latestPPBS && (() => { const s = sugarBadge(latestPPBS.meal_context, latestPPBS.glucose_level); return <span className={`badge ${s.cls}`}>{s.text}</span>; })()}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Full Readings Report Table ── */}
+      {sortedLogs.length > 0 && (
+        <div style={{ marginTop: ".8rem" }}>
+          <p className="small muted" style={{ fontWeight: 700, marginBottom: ".4rem" }}>
+            All Blood Sugar Readings ({sortedLogs.length} total):
+          </p>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Time</th>
-                  <th>Level (mg/dL)</th>
-                  <th>Context</th>
+                  <th>Type</th>
+                  <th>Level</th>
+                  <th>Status</th>
                   <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {logs.slice(0, 5).map((l, i) => (
-                  <tr key={l.log_id || i}>
-                    <td>{l.date}</td>
-                    <td>{l.time}</td>
-                    <td>
-                      <span className={`badge ${l.glucose_level > 140 ? "badge-warn" : l.glucose_level < 70 ? "badge-danger" : "badge-ok"}`}>
-                        {l.glucose_level} mg/dL
-                      </span>
-                    </td>
-                    <td>{l.meal_context}</td>
-                    <td className="small muted">{l.notes || "-"}</td>
-                  </tr>
-                ))}
+                {sortedLogs.map((l, i) => {
+                  const isFbs  = isFBS(l.meal_context);
+                  const isPpbs = isPPBS(l.meal_context);
+                  const badge  = sugarBadge(l.meal_context, l.glucose_level);
+                  return (
+                    <tr key={l.log_id || i}>
+                      <td>{l.date}</td>
+                      <td>{l.time}</td>
+                      <td>
+                        <span className={`badge ${isFbs ? "badge-fbs" : isPpbs ? "badge-ppbs" : "badge-muted"}`}>
+                          {isFbs ? "FBS" : isPpbs ? "PPBS" : l.meal_context || "—"}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{l.glucose_level} mg/dL</td>
+                      <td><span className={`badge ${badge.cls}`}>{badge.text}</span></td>
+                      <td className="small muted">{l.notes && l.notes !== "FBS" && l.notes !== "PPBS" ? l.notes : "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

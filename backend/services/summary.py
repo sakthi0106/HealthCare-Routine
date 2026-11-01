@@ -176,7 +176,7 @@ def _sugar_history(s, e) -> dict:
 
 def history(range_name="today", start=None, end=None, parts=None) -> dict:
     s, e = resolve_range(range_name, start, end)
-    want = set(parts or ["medicine", "water", "walking", "respirometer"])
+    want = set(parts or ["medicine", "water", "walking", "respirometer", "blood_sugar"])
     out = {"start": s.isoformat(), "end": e.isoformat(), "days_in_range": (e - s).days + 1}
     if "medicine" in want:
         out["medicine"] = _medicine_history(s, e)
@@ -186,4 +186,6 @@ def history(range_name="today", start=None, end=None, parts=None) -> dict:
         out["walking"] = _walking_history(s, e)
     if "respirometer" in want:
         out["respirometer"] = _resp_history(s, e)
+    if "blood_sugar" in want:
+        out["blood_sugar"] = _sugar_history(s, e)
     return out
