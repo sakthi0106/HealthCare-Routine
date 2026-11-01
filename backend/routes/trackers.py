@@ -77,3 +77,26 @@ def respirometer_skip(log_id: str):
 @router.post("/respirometer/{log_id}/snooze")
 def respirometer_snooze(log_id: str, body: SnoozeIn = SnoozeIn()):
     return sheets.record_respirometer_snoozed(log_id, body.snooze_minutes)
+
+
+class BloodSugarIn(BaseModel):
+    glucose_level: int = Field(gt=20, le=800)
+    meal_context: Optional[str] = Field(default="Fasting", max_length=50)
+    date: Optional[str] = None
+    time: Optional[str] = None
+    notes: Optional[str] = Field(default="", max_length=300)
+
+
+@router.get("/blood-sugar/today")
+def blood_sugar_today():
+    return sheets.get_blood_sugar_today()
+
+
+@router.post("/blood-sugar")
+def blood_sugar_add(body: BloodSugarIn):
+    return sheets.add_blood_sugar(body.glucose_level, body.meal_context, body.date, body.time, body.notes)
+
+
+@router.delete("/blood-sugar/{log_id}")
+def blood_sugar_delete(log_id: str):
+    return sheets.delete_blood_sugar(log_id)

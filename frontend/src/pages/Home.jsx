@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import { api } from "../services/api";
@@ -8,16 +8,22 @@ import ReminderSetup from "../components/ReminderSetup";
 import DashboardCharts from "../components/DashboardCharts";
 import { useAuth } from "../hooks/useAuth";
 import { SLOT_ICON, cap, fmtDate, fmtMl, fmtShortDate, fmtTime } from "../utils/format";
+import { useToast } from "../hooks/useToast";
+
+const WATER_BTNS = [50, 100, 150, 200, 250, 500];
 
 function slotSummary(items) {
   const slots = {};
   items.forEach((i) => (slots[i.slot] = [...(slots[i.slot] || []), i]));
   return ["morning", "afternoon", "evening", "night"].filter((s) => slots[s]).map((s) => {
-    const list = slots[s];
-    const allDone = list.every((i) => i.status === "Taken");
+    const list     = slots[s];
+    const allDone  = list.every((i) => i.status === "Taken");
     const allClosed = list.every((i) => i.status === "Taken" || i.status === "Skipped");
-    const anyDue = list.some((i) => i.state === "due");
-    return { slot: s, label: allDone ? "✓ Taken" : allClosed ? "Skipped" : anyDue ? "⏰ Pending" : "⏳ Upcoming" };
+    const anyDue   = list.some((i) => i.state === "due");
+    return {
+      slot: s,
+      label: allDone ? "✓ Taken" : allClosed ? "Skipped" : anyDue ? "⏰ Pending" : "⏳ Upcoming",
+    };
   });
 }
 
@@ -28,17 +34,22 @@ export default function Home() {
   if (!d) return error ? <ErrorBox message={error} onRetry={reload} /> : <Loading />;
 
   const { medicines: m, water, walking, respirometer: r, next_appointment: appt, low_stock: low } = d;
-  const dueDoses = m.items.filter((i) => i.state === "due");
-  const nextDose = m.next;
+  const dueDoses   = m.items.filter((i) => i.state === "due");
+  const nextDose   = m.next;
   const dueSession = r.items.find((i) => i.state === "due");
-  const lastTaken = [...m.items].filter((i) => i.taken_time).sort((a, b) => b.taken_time.localeCompare(a.taken_time))[0];
+  const lastTaken  = [...m.items].filter((i) => i.taken_time).sort((a, b) => b.taken_time.localeCompare(a.taken_time))[0];
+
+  // Display names (passed from backend greeting)
+  const greeting  = d.greeting;
+  const firstName = (d.name || "").split(" ")[0];
 
   return (
     <>
-      <h1>{d.greeting}, {d.name}!</h1>
+      <h1 style={{ marginBottom: "1rem" }}>{greeting}, {firstName}! 👋</h1>
       {error && <ErrorBox message={error} />}
       <ReminderSetup />
 
+      {/* ── Admin overview stats ──────────────────── */}
       {isAdmin && (
         <section className="stats-banner" aria-label="Overview">
           <div className="stat-tile">
@@ -50,14 +61,19 @@ export default function Home() {
             <div className="stat-value">{low.length}</div>
           </div>
           <div className="stat-tile">
+            <div className="stat-label">Water today</div>
+            <div className="stat-value" style={{ fontSize: "1.2rem" }}>{fmtMl(water.total_ml)}</div>
+          </div>
+          <div className="stat-tile">
             <div className="stat-label">Recent activity</div>
             <div className="stat-value small">
-              {lastTaken ? `${lastTaken.medicine_name} taken at ${fmtTime(lastTaken.taken_time)}` : "Nothing recorded yet"}
+              {lastTaken ? `${lastTaken.medicine_name} at ${fmtTime(lastTaken.taken_time)}` : "Nothing yet"}
             </div>
           </div>
         </section>
       )}
 
+      {/* ── Low stock alert ───────────────────────── */}
       {low.length > 0 && (
         <div className="alert alert-warn" role="alert">
           <strong>⚠️ Medicine alert</strong>
@@ -65,23 +81,37 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── Today's summary card ──────────────────── */}
       <Card icon="📋" title="Today's Summary">
-        <div className="row"><span>💊 Medicines</span><strong>{m.taken} / {m.total} completed</strong></div>
-        <div className="row"><span>💧 Water</span><strong>{fmtMl(water.total_ml)}</strong></div>
-        <div className="row"><span>🚶 Walking</span><strong>{walking.total_minutes} min | {walking.total_km} km</strong></div>
-        <div className="row"><span>🫁 Respirometer</span><strong>{r.completed} / {r.total} completed</strong></div>
-        <div className="row">
-          <span>🏥 Next appointment</span>
-          <strong>{appt ? `${appt.purpose || appt.department || "Visit"} — ${fmtShortDate(appt.date)}` : "None"}</strong>
+        <div className="tiles">
+          <div className="tile">
+            <b>💊 {m.taken}/{m.total}</b>
+            <span>Medicines</span>
+          </div>
+          <div className="tile">
+            <b>💧 {fmtMl(water.total_ml)}</b>
+            <span>Water</span>
+          </div>
+          <div className="tile">
+            <b>🚶 {walking.total_minutes}m</b>
+            <span>{walking.total_km} km</span>
+          </div>
+          <div className="tile">
+            <b>🫁 {r.completed}/{r.total}</b>
+            <span>Breathing</span>
+          </div>
         </div>
-        <div className="row">
-          <span>💊 Medicine alerts</span>
-          <strong>{low.length ? `${low.length} medicine${low.length > 1 ? "s" : ""} running low` : "None"}</strong>
-        </div>
+        {appt && (
+          <div className="row">
+            <span>🏥 Next appointment</span>
+            <strong>{appt.purpose || appt.department || "Visit"} — {fmtShortDate(appt.date)}</strong>
+          </div>
+        )}
       </Card>
 
+      {/* ── Medicines card ────────────────────────── */}
       <Card icon="💊" title="Medicines" to="/medicines">
-        <p className="big">{m.taken} of {m.total} <small>medicines completed</small></p>
+        <p className="big">{m.taken} of {m.total} <small>doses completed</small></p>
         {m.total === 0 && <p className="muted">No medicines are scheduled today.</p>}
         <div className="row" style={{ flexWrap: "wrap" }}>
           {slotSummary(m.items).map((s) => (
@@ -99,24 +129,37 @@ export default function Home() {
             </div>
           ))
         ) : nextDose ? (
-          <p style={{ marginTop: ".6rem" }}>Next medicine: <strong>{nextDose.medicine_name}</strong> at <strong>{fmtTime(nextDose.scheduled_time)}</strong></p>
+          <p style={{ marginTop: ".6rem" }}>
+            Next: <strong>{nextDose.medicine_name}</strong> at <strong>{fmtTime(nextDose.scheduled_time)}</strong>
+          </p>
         ) : m.total > 0 ? (
           <p className="muted">All of today's medicines are recorded. 👍</p>
         ) : null}
       </Card>
 
+      {/* ── Water card ────────────────────────────── */}
       <Card icon="💧" title="Water" to="/water">
         <p className="big">{fmtMl(water.total_ml)} <small>/ {fmtMl(water.target_ml)}</small></p>
         <ProgressBar value={water.total_ml} max={water.target_ml} label="Water progress" />
         <QuickWater onDone={reload} />
       </Card>
 
+      {/* ── Walking card ──────────────────────────── */}
       <Card icon="🚶" title="Walking" to="/walking">
         <p className="big">{walking.total_minutes} <small>minutes</small> · {walking.total_km} <small>km</small></p>
-        {walking.target_minutes > 0 && <ProgressBar value={walking.total_minutes} max={walking.target_minutes} label="Walking progress" />}
-        <Link className="btn btn-block" style={{ display: "block", textAlign: "center", textDecoration: "none", lineHeight: "40px" }} to="/walking?add=1">+ Add Walking</Link>
+        {walking.target_minutes > 0 && (
+          <ProgressBar value={walking.total_minutes} max={walking.target_minutes} label="Walking progress" />
+        )}
+        <Link
+          className="btn btn-outline"
+          style={{ display: "block", textAlign: "center", textDecoration: "none", lineHeight: "40px", marginTop: ".6rem" }}
+          to="/walking?add=1"
+        >
+          + Add Walking Session
+        </Link>
       </Card>
 
+      {/* ── Respirometer card ─────────────────────── */}
       <Card icon="🫁" title="Respirometer" to="/respirometer">
         {r.total === 0 ? (
           <p className="muted">No sessions are scheduled.</p>
@@ -129,22 +172,25 @@ export default function Home() {
         )}
       </Card>
 
+      {/* ── Appointment card ──────────────────────── */}
       <Card icon="🏥" title="Appointments" to="/appointments">
         {appt ? (
           <div>
             <p className="big" style={{ fontSize: "1.3rem" }}>{appt.purpose || appt.department || "Appointment"}</p>
             <p><strong>{fmtDate(appt.date)}</strong><br />{fmtTime(appt.time)}</p>
-            {appt.doctor && <p>Doctor: {appt.doctor}</p>}
+            {appt.doctor   && <p>Doctor: {appt.doctor}</p>}
             {appt.hospital && <p>Hospital: {appt.hospital}</p>}
-            {appt.notes && <p className="muted">{appt.notes}</p>}
+            {appt.notes    && <p className="muted">{appt.notes}</p>}
           </div>
         ) : (
           <p className="muted">No upcoming appointments.</p>
         )}
       </Card>
 
+      {/* ── Analytics charts ──────────────────────── */}
       <DashboardCharts today={d} isAdmin={isAdmin} />
 
+      {/* ── Medicine Stock ────────────────────────── */}
       <Card icon="📦" title="Medicine Stock" tone={low.length ? "warn" : undefined}>
         <StockList />
       </Card>
@@ -152,37 +198,61 @@ export default function Home() {
   );
 }
 
+/* ── Water quick-add (+50 to +500 ml) ───────────────────────── */
 function QuickWater({ onDone }) {
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
+  const toast   = useToast();
+  const busyRef = useRef(false);   // prevents double-clicks across buttons
+  const [activeMl, setActiveMl] = useState(null);
+
   const add = async (ml) => {
-    setBusy(true);
-    setErr("");
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setActiveMl(ml);
     try {
       await api("/api/water", { method: "POST", body: { amount_ml: ml } });
+      toast(`💧 +${ml} ml added`);
       onDone();
     } catch (e) {
-      setErr("Unable to save your water entry. Please try again.");
+      toast("Unable to save. Please try again.", "error");
     } finally {
-      setBusy(false);
+      busyRef.current = false;
+      setActiveMl(null);
     }
   };
+
   return (
     <>
-      <div className="btn-row">
-        <button className="btn" disabled={busy} onClick={() => add(250)}>+250 ml</button>
-        <button className="btn" disabled={busy} onClick={() => add(500)}>+500 ml</button>
-        <Link className="btn btn-outline" style={{ textDecoration: "none", textAlign: "center", lineHeight: "40px" }} to="/water?custom=1">Custom</Link>
+      <div className="water-btn-grid">
+        {WATER_BTNS.map((ml) => (
+          <button
+            key={ml}
+            className="water-btn"
+            disabled={activeMl !== null}
+            onClick={() => add(ml)}
+            aria-label={`Add ${ml} ml`}
+          >
+            {activeMl === ml ? "…" : `+${ml} ml`}
+          </button>
+        ))}
       </div>
-      {err && <p className="alert alert-danger" style={{ marginTop: ".5rem" }}>{err}</p>}
+      <div style={{ marginTop: ".5rem" }}>
+        <Link
+          className="btn btn-outline btn-small"
+          to="/water?custom=1"
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+        >
+          Custom amount
+        </Link>
+      </div>
     </>
   );
 }
 
+/* ── Stock list ──────────────────────────────────────────────── */
 function StockList() {
   const { data, error, loading } = useFetch("/api/inventory");
   if (loading && !data) return <Loading />;
-  if (error && !data) return <p className="muted">{error}</p>;
+  if (error && !data)  return <p className="muted">{error}</p>;
   if (!data.items.length) return <p className="muted">No medicines added yet.</p>;
   return data.items.map((i) => (
     <div className="row" key={i.medicine_id}>

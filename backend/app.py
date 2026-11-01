@@ -14,7 +14,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("app")
 
-from routes import admin_data, auth, dashboard, medicines, trackers  # noqa: E402
+from routes import admin_data, auth, dashboard, medical_reports, medicines, trackers  # noqa: E402
 from routes import push as push_routes  # noqa: E402
 from services import push  # noqa: E402
 from utils.errors import AppError  # noqa: E402
@@ -85,6 +85,6 @@ def health_check():
     return {"status": "ok", "background_reminders": push.configured()}
 
 
-for module in (auth, dashboard, medicines, trackers, admin_data, push_routes):
+for module in (auth, dashboard, medicines, trackers, admin_data, medical_reports, push_routes):
     app.include_router(module.router)
 app.include_router(push_routes.cron_router)

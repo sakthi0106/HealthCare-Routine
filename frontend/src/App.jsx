@@ -9,6 +9,7 @@ import Water from "./pages/Water";
 import Walking from "./pages/Walking";
 import Respirometer from "./pages/Respirometer";
 import Appointments from "./pages/Appointments";
+import MedicalReports from "./pages/MedicalReports";
 import AdminMedicines from "./pages/admin/AdminMedicines";
 import Inventory from "./pages/admin/Inventory";
 import AdminAppointments from "./pages/admin/AdminAppointments";
@@ -20,7 +21,7 @@ export default function App() {
 
   return (
     <Routes>
-      {/* public page: works without signing in */}
+      {/* Public landing page – no auth needed */}
       <Route path="/welcome" element={<Landing />} />
 
       {!role ? (
@@ -28,18 +29,20 @@ export default function App() {
       ) : (
         <Route element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="medicines" element={<Medicines />} />
-          <Route path="water" element={<Water />} />
-          <Route path="walking" element={<Walking />} />
-          <Route path="respirometer" element={<Respirometer />} />
-          <Route path="appointments" element={<Appointments />} />
+          <Route path="medicines"      element={<Medicines />} />
+          <Route path="water"          element={<Water />} />
+          <Route path="walking"        element={<Walking />} />
+          <Route path="respirometer"   element={<Respirometer />} />
+          <Route path="appointments"   element={<Appointments />} />
+          {/* Medical reports: accessible by both roles */}
+          <Route path="medical-reports" element={<MedicalReports />} />
           {isAdmin && (
             <>
-              <Route path="admin/medicines" element={<AdminMedicines />} />
-              <Route path="admin/inventory" element={<Inventory />} />
+              <Route path="admin/medicines"    element={<AdminMedicines />} />
+              <Route path="admin/inventory"    element={<Inventory />} />
               <Route path="admin/appointments" element={<AdminAppointments />} />
-              <Route path="admin/reports" element={<Reports />} />
-              <Route path="admin/settings" element={<Settings />} />
+              <Route path="admin/reports"      element={<Reports />} />
+              <Route path="admin/settings"     element={<Settings />} />
             </>
           )}
           <Route path="*" element={<Navigate to="/" replace />} />

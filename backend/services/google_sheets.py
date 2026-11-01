@@ -575,6 +575,7 @@ def _v_sessions(v):
 
 SETTING_VALIDATORS = {
     "father_name": _v_text(60),
+    "admin_name": _v_text(60),
     "water_target_ml": _v_int(100, 10000),
     "walking_target_minutes": _v_float(0, 600),
     "walking_target_distance": _v_float(0, 100),
@@ -602,8 +603,9 @@ def get_settings() -> dict:
     for key, default in DEFAULT_SETTINGS.items():
         value = raw.get(key, "")
         s[key] = value if str(value).strip() != "" else default
-    name = s["father_name"].strip() or os.getenv("FATHER_NAME", "").strip() or "Dad"
-    out = {"father_name": name}
+    father_name = s.get("father_name", "").strip() or os.getenv("FATHER_NAME", "").strip() or "Ayyamperumal E"
+    admin_name = s.get("admin_name", "").strip() or os.getenv("ADMIN_NAME", "").strip() or "Dhanushkumar A"
+    out = {"father_name": father_name, "admin_name": admin_name}
     for key in ("water_target_ml", "respirometer_frequency", "respirometer_sessions", "respirometer_snooze_minutes",
                 "medicine_snooze_minutes", "water_reminder_interval_minutes"):
         out[key] = int(_num(s[key]))
@@ -706,3 +708,55 @@ def delete_walking(log_id) -> dict:
         _find_log("Walking_Log", log_id, "walking")
         get_store().delete("Walking_Log", "log_id", log_id)
         return get_walking_today()
+
+
+# ------------------------------------------------------------------ blood sugar
+def _sugar_out(r) -> dict:
+    return {
+        "log_id": r["log_id"],
+        "date": r["date"],
+        "time": tu.norm_time(r["time"]),
+        "glucose_level": int(_num(r.get("glucose_level", 0))),
+        "meal_context": r.get("meal_context", "Fasting"),
+        "notes": r.get("notes", ""),
+    }
+
+
+def get_blood_sugar_logs(start, end) -> list:
+    return [_sugar_out(r) for r in get_store().read("Blood_Sugar_Log")
+            if (d := tu.parse_date(r["date"])) and start <= d <= end]
+
+
+def get_blood_sugar_today() -> dict:
+    d = tu.today()
+    entries = sorted(get_blood_sugar_logs(d, d), key=lambda e: e["time"])
+    latest = entries[-1] if entries else None
+    return {
+        "date": d.isoformat(),
+        "entries": entries,
+        "count": len(entries),
+        "latest": latest,
+    }
+
+
+def add_blood_sugar(glucose_level: int, meal_context: str = "Fasting", date_str: str = None, time_str: str = None, notes: str = "") -> dict:
+    d = tu.parse_date(date_str) if date_str else tu.today()
+    _not_future(d)
+    log_id = tu.new_id("BSG")
+    t = time_str or tu.fmt_time(tu.now().time())
+    get_store().append("Blood_Sugar_Log", {
+        "log_id": log_id,
+        "date": d.isoformat(),
+        "time": t,
+        "glucose_level": str(int(glucose_level)),
+        "meal_context": meal_context or "Fasting",
+        "notes": notes or "",
+    })
+    return get_blood_sugar_today()
+
+
+def delete_blood_sugar(log_id: str) -> dict:
+    with _lock:
+        _find_log("Blood_Sugar_Log", log_id, "blood sugar")
+        get_store().delete("Blood_Sugar_Log", "log_id", log_id)
+        return get_blood_sugar_today()

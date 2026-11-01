@@ -22,4 +22,6 @@ def login(body: LoginIn, request: Request):
 
 @router.get("/me")
 def me(user: dict = Depends(auth.require_user)):
-    return {"role": user["role"], "name": sheets.get_settings()["father_name"]}
+    settings = sheets.get_settings()
+    name = settings["admin_name"] if user["role"] == "admin" else settings["father_name"]
+    return {"role": user["role"], "name": name}

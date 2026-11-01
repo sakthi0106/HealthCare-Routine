@@ -10,7 +10,17 @@ export default function Settings() {
   const [f, setF] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (data) setF({ ...data, respirometer_sessions: data.respirometer_sessions || "" }); }, [data]);
+  useEffect(() => {
+    if (data) {
+      setF({
+        ...data,
+        respirometer_sessions: data.respirometer_sessions || "",
+        admin_name: data.admin_name || "Dhanushkumar A",
+        father_name: data.father_name || "Ayyamperumal E",
+      });
+    }
+  }, [data]);
+
   if (!f) return error ? <ErrorBox message={error} onRetry={reload} /> : <Loading />;
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
@@ -33,10 +43,18 @@ export default function Settings() {
   return (
     <>
       <h1>⚙️ Settings</h1>
-      <div className="alert alert-info"><p>Set every target and schedule from the doctor's instructions. The app does not choose medical values for you.</p></div>
+      <div className="alert alert-info">
+        <p>Set every target and schedule from the doctor's instructions. The app does not choose medical values for you.</p>
+      </div>
 
-      <fieldset className="fieldset"><legend>General</legend>
-        <Field label="Name shown in the greeting"><input type="text" value={f.father_name} onChange={set("father_name")} maxLength={60} /></Field>
+      <fieldset className="fieldset">
+        <legend>User Profiles & Display Names</legend>
+        <Field label="Father / Patient Display Name">
+          <input type="text" value={f.father_name || ""} onChange={set("father_name")} maxLength={60} placeholder="e.g. Ayyamperumal E" />
+        </Field>
+        <Field label="Admin Display Name">
+          <input type="text" value={f.admin_name || ""} onChange={set("admin_name")} maxLength={60} placeholder="e.g. Dhanushkumar A" />
+        </Field>
       </fieldset>
 
       <fieldset className="fieldset"><legend>💧 Water and 🚶 walking targets</legend>

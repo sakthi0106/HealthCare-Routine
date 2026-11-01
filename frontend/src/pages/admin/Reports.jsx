@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { Card, ErrorBox, Loading } from "../../components/ui";
-import { MedicineChart, RespirometerChart, TodayProgressChart, WalkingChart, WaterChart } from "../../components/charts";
+import {
+  BloodSugarChart,
+  MedicineChart,
+  OverallHealthChart,
+  RespirometerChart,
+  TodayProgressChart,
+  WalkingChart,
+  WaterChart,
+} from "../../components/charts";
 import { fmtDate, fmtMl } from "../../utils/format";
 
-const VIEWS = [["today", "Daily"], ["week", "Weekly"], ["last30", "Monthly"]];
-const LIVE_MS = 15000; // how often the graphs refresh while "Live" is on
+const VIEWS = [
+  ["today",  "Daily"],
+  ["week",   "Weekly"],
+  ["last30", "Monthly"],
+];
+const LIVE_MS = 15000;
 
 export default function Reports() {
   const [view, setView] = useState("today");
@@ -15,7 +27,7 @@ export default function Reports() {
   const settings = useFetch("/api/settings", { interval: live ? 60000 : 0 }).data;
 
   useEffect(() => { if (h) setUpdatedAt(new Date()); }, [h]);
-  useEffect(() => {   // refresh straight away when the family member comes back to this screen
+  useEffect(() => {
     const onVisible = () => document.visibilityState === "visible" && live && reload();
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -25,10 +37,18 @@ export default function Reports() {
 
   return (
     <>
-      <h1>Reports</h1>
-      <div className="tabs">
-        {VIEWS.map(([k, label]) => <button key={k} className={`tab ${view === k ? "active" : ""}`} onClick={() => setView(k)}>{label}</button>)}
+      <div className="reports-header">
+        <h1>📊 Healthcare Analytics</h1>
       </div>
+
+      <div className="tabs">
+        {VIEWS.map(([k, label]) => (
+          <button key={k} className={`tab ${view === k ? "active" : ""}`} onClick={() => setView(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="live-row">
         <button className="btn btn-small btn-outline live-pill" onClick={() => setLive(!live)} aria-pressed={live}>
           <span className={`live-dot ${live ? "" : "off"}`} aria-hidden="true" />
@@ -36,19 +56,30 @@ export default function Reports() {
         </button>
         <span className="small muted" role="status">
           {updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Loading…"}
-          {live ? " · refreshes every 15 seconds" : ""}
+          {live ? " · refreshes every 15s" : ""}
         </span>
         {!live && <button className="btn btn-small btn-outline" onClick={reload}>Refresh now</button>}
       </div>
 
       {error && <ErrorBox message={error} onRetry={reload} />}
       {!h && !error && <Loading />}
+
       {h && (
         <>
           <p className="muted">{h.start === h.end ? fmtDate(h.start) : `${fmtDate(h.start)} – ${fmtDate(h.end)}`}</p>
 
+          {/* Overall healthcare activity analysis */}
+          <Card icon="🏆" title="Overall Healthcare Adherence">
+            <OverallHealthChart
+              medicineSummary={h.medicine?.summary}
+              waterSummary={{ total_ml: h.water?.total_ml, target: (settings?.water_target_ml || 2500) * (h.days_in_range || 1) }}
+              walkingSummary={{ total_minutes: h.walking?.total_minutes, target: (settings?.walking_target_minutes || 30) * (h.days_in_range || 1) }}
+              respSummary={h.respirometer?.summary}
+            />
+          </Card>
+
           {!trend && (
-            <Card icon="🎯" title="Today's progress">
+            <Card icon="🎯" title="Today's Progress">
               <TodayProgressChart
                 medicines={{ taken: h.medicine.summary.taken, total: h.medicine.summary.scheduled }}
                 water={{ ml: h.water.total_ml, target: settings?.water_target_ml }}
@@ -58,7 +89,23 @@ export default function Reports() {
             </Card>
           )}
 
-          <Card icon="💊" title="Medicines">
+          {/* Blood Sugar Tests & Trends */}
+          <Card icon="🩸" title="Blood Sugar Measurements & Trends">
+            <div className="tiles">
+              <div className="tile">
+                <b>{h.blood_sugar?.average_glucose ? `${h.blood_sugar.average_glucose} mg/dL` : "—"}</b>
+                <span>Avg Glucose</span>
+              </div>
+              <div className="tile">
+                <b>{h.blood_sugar?.total_tests || 0}</b>
+                <span>Total Tests</span>
+              </div>
+            </div>
+            <BloodSugarChart days={h.blood_sugar?.days || []} logs={h.blood_sugar?.logs || []} />
+          </Card>
+
+          {/* Medication Adherence */}
+          <Card icon="💊" title="Medication Adherence">
             <div className="tiles">
               <div className="tile"><b>{h.medicine.summary.scheduled}</b><span>Scheduled</span></div>
               <div className="tile"><b>{h.medicine.summary.taken}</b><span>Taken</span></div>
@@ -68,24 +115,27 @@ export default function Reports() {
             {trend && <MedicineChart days={h.medicine.days} />}
           </Card>
 
-          <Card icon="💧" title="Water">
+          {/* Water Intake */}
+          <Card icon="💧" title="Daily Water Consumption">
             <div className="tiles">
-              <div className="tile"><b>{fmtMl(h.water.total_ml)}</b><span>Total</span></div>
-              <div className="tile"><b>{fmtMl(h.water.average_ml)}</b><span>Daily average</span></div>
+              <div className="tile"><b>{fmtMl(h.water.total_ml)}</b><span>Total Intake</span></div>
+              <div className="tile"><b>{fmtMl(h.water.average_ml)}</b><span>Daily Average</span></div>
             </div>
             {trend && <WaterChart days={h.water.days} target={settings?.water_target_ml} />}
           </Card>
 
-          <Card icon="🚶" title="Walking">
+          {/* Walking Activity */}
+          <Card icon="🚶" title="Walking Activity & Progress">
             <div className="tiles">
-              <div className="tile"><b>{Math.round(h.walking.total_minutes)} min</b><span>Total time</span></div>
-              <div className="tile"><b>{h.walking.total_km} km</b><span>Total distance</span></div>
-              <div className="tile"><b>{h.walking.average_minutes} min</b><span>Daily average</span></div>
+              <div className="tile"><b>{Math.round(h.walking.total_minutes)} min</b><span>Total Time</span></div>
+              <div className="tile"><b>{h.walking.total_km} km</b><span>Total Distance</span></div>
+              <div className="tile"><b>{h.walking.average_minutes} min</b><span>Daily Average</span></div>
             </div>
             {trend && <WalkingChart days={h.walking.days} />}
           </Card>
 
-          <Card icon="🫁" title="Respirometer">
+          {/* Respirometer */}
+          <Card icon="🫁" title="Breathing Routine (Respirometer)">
             <div className="tiles">
               <div className="tile"><b>{h.respirometer.summary.completed}</b><span>Completed</span></div>
               <div className="tile"><b>{h.respirometer.summary.scheduled}</b><span>Scheduled</span></div>
@@ -93,7 +143,10 @@ export default function Reports() {
             </div>
             {trend && <RespirometerChart days={h.respirometer.days} />}
           </Card>
-          <p className="small muted center">Hover or tap a bar for details · drag to zoom · double-click to reset · click a legend name to hide it. These are records of what was marked in the app, not a health score or medical advice. Days the app was not opened count as "not recorded".</p>
+
+          <p className="small muted center">
+            Interactive analytical charts powered by Chart.js · Data updates dynamically as activities are logged.
+          </p>
         </>
       )}
     </>

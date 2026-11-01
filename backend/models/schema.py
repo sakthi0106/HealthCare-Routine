@@ -31,10 +31,19 @@ SHEETS = {
         "quantity_added", "notes",
     ],
     "Settings": ["setting", "value"],
+    # Medical reports: metadata + base64 file content stored inline
+    "Blood_Sugar_Log": [
+        "log_id", "date", "time", "glucose_level", "meal_context", "notes",
+    ],
+    "Medical_Reports": [
+        "report_id", "title", "category", "date", "description",
+        "filename", "mime_type", "size_bytes", "content_b64", "uploaded_at",
+    ],
     # used for background (push) reminders
     "Push_Subscriptions": ["endpoint", "p256dh", "auth", "role", "created_at"],
     "Notification_Log": ["notification_id", "sent_at"],
 }
+
 # Placeholders ONLY - set real values from the doctor's instructions in the app.
 DEFAULT_SETTINGS = {
     "water_target_ml": "2500",
@@ -48,7 +57,8 @@ DEFAULT_SETTINGS = {
     "notification_enabled": "true",
     "appointment_reminder_days": "7,1",     # "7,1,2h" = 7 days, 1 day, 2 hours before
     "respirometer_sessions": "",            # optional: max sessions per day (blank = use frequency)
-    "father_name": "",                      # shown in the greeting (blank = FATHER_NAME from .env)
+    "father_name": "Ayyamperumal E",        # shown in the greeting for the father/patient role
+    "admin_name": "Dhanushkumar A",         # shown in the greeting for the admin role
     # notification switches
     "notify_medicine": "true",
     "notify_water": "true",

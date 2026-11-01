@@ -14,7 +14,7 @@ def _greeting(now_dt) -> str:
     return "Good Morning" if h < 12 else "Good Afternoon" if h < 17 else "Good Evening"
 
 
-def dashboard() -> dict:
+def dashboard(user_role: str = 'father') -> dict:
     now_dt = tu.now()
     settings = sheets.get_settings()
     doses = sheets.get_today_medicine_schedule()
@@ -23,10 +23,11 @@ def dashboard() -> dict:
     nxt_dose = next((d for d in doses if d["status"] in ("Pending", "Snoozed")), None)
     return {
         "greeting": _greeting(now_dt),
-        "name": settings["father_name"],
+        "name": settings.get("admin_name", "Dhanushkumar A") if user_role == "admin" else settings.get("father_name", "Ayyamperumal E"),
         "date": now_dt.date().isoformat(),
         "medicines": {"items": doses, **sheets.summarize_doses(doses), "next": nxt_dose},
         "water": sheets.get_water_today(),
+        "blood_sugar": sheets.get_blood_sugar_today(),
         "walking": sheets.get_walking_today(),
         "respirometer": {"items": sessions, **sheets.summarize_sessions(sessions)},
         "next_appointment": appts[0] if appts else None,
@@ -148,6 +149,29 @@ def _resp_history(s, e) -> dict:
     return {"logs": logs, "days": sorted(per.values(), key=lambda x: x["date"]),
             "summary": {"scheduled": len(logs), "completed": count("Completed"), "skipped": count("Skipped"),
                         "pending": count("Pending") + count("Snoozed")}}
+
+
+
+def _sugar_history(s, e) -> dict:
+    rows = sheets.get_blood_sugar_logs(s, e)
+    per_day = {d.isoformat(): [] for d in _days(s, e)}
+    for r in rows:
+        per_day.setdefault(r["date"], []).append(r)
+    days = []
+    all_readings = [r["glucose_level"] for r in rows if r.get("glucose_level")]
+    avg_glucose = round(sum(all_readings) / len(all_readings)) if all_readings else 0
+    for d in _days(s, e):
+        d_str = d.isoformat()
+        items = per_day.get(d_str, [])
+        vals = [i["glucose_level"] for i in items if i.get("glucose_level")]
+        day_avg = round(sum(vals) / len(vals)) if vals else None
+        days.append({
+            "date": d_str,
+            "average": day_avg,
+            "readings": items,
+            "count": len(items),
+        })
+    return {"days": days, "logs": rows, "average_glucose": avg_glucose, "total_tests": len(rows)}
 
 
 def history(range_name="today", start=None, end=None, parts=None) -> dict:

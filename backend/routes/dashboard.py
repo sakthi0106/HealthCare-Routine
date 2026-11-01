@@ -9,8 +9,8 @@ router = APIRouter(prefix="/api", tags=["dashboard"], dependencies=[Depends(requ
 
 
 @router.get("/dashboard")
-def get_dashboard():
-    return summary.dashboard()
+def get_dashboard(user: dict = Depends(require_user)):
+    return summary.dashboard(user_role=user.get('role', 'father'))
 
 
 @router.get("/history")
