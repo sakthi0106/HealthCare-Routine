@@ -92,7 +92,10 @@ export default function Layout() {
             <Icon name={theme === "dark" ? "sun" : "moon"} size={17} />
           </button>
 
-          <button className="btn btn-ghost btn-small" onClick={logout}>Sign out</button>
+          <button className="btn btn-ghost btn-small logout-btn" onClick={logout}>
+            <span className="logout-text">Sign out</span>
+            <span className="logout-icon" aria-hidden="true">⏻</span>
+          </button>
         </div>
       </header>
 

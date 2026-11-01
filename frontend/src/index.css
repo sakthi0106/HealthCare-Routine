@@ -528,6 +528,102 @@ tbody tr:hover { background: rgba(13,148,136,.04); }
 .time12 { display: flex; align-items: center; gap: .4rem; }
 .time12 select { flex: 1; min-width: 0; padding-left: .5rem; padding-right: .3rem; }
 
+/* ── Logout button responsive ────────────────────────────── */
+.logout-icon { display: none; }
+@media (max-width: 480px) {
+  .logout-text { display: none; }
+  .logout-icon { display: inline; font-size: 1.1rem; }
+}
+
+/* ── Blood Sugar Quick-Entry ─────────────────────────────── */
+.sugar-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+.sugar-quick-card {
+  background: linear-gradient(135deg, rgba(220,38,38,.06) 0%, rgba(239,68,68,.04) 100%);
+  border: 1.5px solid rgba(220,38,38,.18);
+  border-radius: 14px;
+  padding: .9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.sugar-quick-header { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.sugar-quick-label  { font-size: 1.15rem; font-weight: 800; color: #dc2626; }
+.sugar-quick-sub    { font-size: .73rem; color: var(--muted); }
+.sugar-quick-body   { display: flex; flex-direction: column; gap: .45rem; }
+.sugar-input-row    { display: flex; align-items: center; gap: .5rem; }
+.sugar-quick-input  {
+  flex: 1; min-width: 0;
+  min-height: 46px; padding: .4rem .75rem;
+  border: 2px solid rgba(220,38,38,.25); border-radius: 10px;
+  font-size: 1.05rem; font-weight: 700;
+  background: #fff;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.sugar-quick-input:focus {
+  border-color: #dc2626; outline: none;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.12);
+}
+.sugar-save-btn { width: 100%; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-color: #dc2626; }
+.sugar-save-btn:hover { background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); box-shadow: 0 4px 16px rgba(220,38,38,.3); }
+.sugar-quick-range { font-size: .7rem; color: var(--muted); margin: 0; }
+
+[data-theme="dark"] .sugar-quick-card { background: rgba(248,113,113,.06); border-color: rgba(248,113,113,.22); }
+[data-theme="dark"] .sugar-quick-input { background: rgba(255,255,255,.06); border-color: rgba(248,113,113,.3); color: var(--text); }
+[data-theme="dark"] .sugar-quick-input:focus { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,.15); }
+
+/* ── Mobile-first Navigation fixes ──────────────────────── */
+/* Scrollable bottom nav on very small screens */
+@media (max-width: 480px) {
+  .nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-item {
+    flex: 0 0 72px;
+    min-width: 72px;
+    font-size: .58rem;
+  }
+  .nav-icon { font-size: 1.25rem; }
+  .topbar-brand strong { font-size: .88rem; }
+  .topbar-date { display: none; }
+  .main { padding: .85rem .7rem; }
+  .card { padding: .9rem .85rem; }
+  h1 { font-size: 1.25rem; }
+  .stats-banner { grid-template-columns: repeat(2, 1fr); gap: .55rem; }
+  .stat-value { font-size: 1.2rem; }
+  .grid2 { grid-template-columns: 1fr; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .tab { font-size: .74rem; min-height: 40px; padding: 0 .4rem; }
+  .sugar-quick-grid { grid-template-columns: 1fr; }
+  .water-btn-grid { grid-template-columns: repeat(3, 1fr); }
+  th, td { padding: .4rem .35rem; font-size: .78rem; }
+  .report-filters input[type=text],
+  .report-filters select,
+  .report-filters input[type=date] { flex: 1 1 100%; }
+}
+
+/* Tablet (481–899px) tweaks */
+@media (min-width: 481px) and (max-width: 899px) {
+  .stats-banner { grid-template-columns: repeat(2, 1fr); }
+  .grid2 { grid-template-columns: 1fr 1fr; }
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Desktop sidebar already handled above for 900px+ */
+
+/* Topbar: hide date text on very narrow screens */
+@media (max-width: 380px) {
+  .topbar-brand strong { font-size: .78rem; }
+  .profile-btn span { display: none; }
+}
+
 /* ── Misc ────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) { *, .live-dot { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 @media (min-width: 1100px) { .main { max-width: 960px; } }

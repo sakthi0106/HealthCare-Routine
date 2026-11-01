@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useFetch from "../hooks/useFetch";
 import { Card, ErrorBox, Field, Modal } from "./ui";
 import Icon from "./Icon";
@@ -21,7 +21,7 @@ const TABS = [
   ["water",     "droplet",     "Water"],
   ["walking",   "footprints",  "Walk"],
   ["breathing", "wind",        "Breathe"],
-  ["sugar",     "activity",    "Blood Sugar"],
+  ["sugar",     "activity",    "Sugar"],
   ["overall",   "bar-chart",   "Overall"],
 ];
 
@@ -31,6 +31,27 @@ const RANGES = [
   ["last30", "Monthly"],
 ];
 
+// FBS normal: 70–99 mg/dL   PPBS normal: <140 mg/dL
+const SUGAR_TYPES = [
+  { key: "FBS",  label: "FBS",  subtitle: "Fasting Blood Sugar",        context: "Fasting",             normal: [70, 99],  warnHigh: 126, unit: "mg/dL" },
+  { key: "PPBS", label: "PPBS", subtitle: "Post Prandial Blood Sugar",  context: "Post Lunch (2 hrs)",  normal: [0, 140],  warnHigh: 200, unit: "mg/dL" },
+];
+
+function sugarStatus(type, val) {
+  const v = Number(val);
+  if (!v) return null;
+  if (type.key === "FBS") {
+    if (v < 70)  return { cls: "badge-danger", label: "Low" };
+    if (v <= 99) return { cls: "badge-ok",     label: "Normal" };
+    if (v <= 125)return { cls: "badge-warn",   label: "Pre-diabetic" };
+    return         { cls: "badge-danger",        label: "High" };
+  }
+  // PPBS
+  if (v < 140) return { cls: "badge-ok",   label: "Normal" };
+  if (v < 200) return { cls: "badge-warn", label: "Elevated" };
+  return         { cls: "badge-danger",    label: "High" };
+}
+
 export default function DashboardCharts({ today, isAdmin }) {
   const toast = useToast();
   const [metric, setMetric] = useState("medicine");
@@ -38,6 +59,14 @@ export default function DashboardCharts({ today, isAdmin }) {
   const [logSugarOpen, setLogSugarOpen] = useState(false);
   const [sugarForm, setSugarForm] = useState({ glucose_level: "", meal_context: "Fasting", notes: "" });
   const [sugarBusy, setSugarBusy] = useState(false);
+
+  // Quick FBS / PPBS entry state
+  const [fbsVal,  setFbsVal]  = useState("");
+  const [ppbsVal, setPpbsVal] = useState("");
+  const fbsBusy  = useRef(false);
+  const ppbsBusy = useRef(false);
+  const [fbsSaving,  setFbsSaving]  = useState(false);
+  const [ppbsSaving, setPpbsSaving] = useState(false);
 
   const hist      = useFetch(`/api/history?range=${range}`, { interval: 60000 });
   const settings  = useFetch("/api/settings").data;
@@ -65,6 +94,28 @@ export default function DashboardCharts({ today, isAdmin }) {
       toast(e.message, "error");
     } finally {
       setSugarBusy(false);
+    }
+  };
+
+  const saveQuickSugar = async (type, valStr, setVal, busyRef, setSaving) => {
+    const val = parseInt(valStr, 10);
+    if (!val || val < 30 || val > 600) { toast("Enter a valid glucose value (30–600)", "error"); return; }
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setSaving(true);
+    try {
+      await api("/api/blood-sugar", {
+        method: "POST",
+        body: { glucose_level: val, meal_context: type.context, notes: type.label },
+      });
+      toast(`${type.label} saved: ${val} mg/dL ✓`);
+      setVal("");
+      hist.reload();
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      busyRef.current = false;
+      setSaving(false);
     }
   };
 
@@ -99,12 +150,60 @@ export default function DashboardCharts({ today, isAdmin }) {
         />
       </LazyWhenVisible>
 
+      {/* ── Quick Blood Sugar Entry ── */}
+      <h3 className="dash-heading" style={{ marginTop: "1.2rem" }}>Quick Blood Sugar Entry</h3>
+      <div className="sugar-quick-grid">
+        {SUGAR_TYPES.map((type) => {
+          const isF = type.key === "FBS";
+          const val  = isF ? fbsVal  : ppbsVal;
+          const setV = isF ? setFbsVal : setPpbsVal;
+          const busy = isF ? fbsSaving : ppbsSaving;
+          const ref  = isF ? fbsBusy  : ppbsBusy;
+          const setSv= isF ? setFbsSaving : setPpbsSaving;
+          const st   = sugarStatus(type, val);
+          return (
+            <div key={type.key} className="sugar-quick-card">
+              <div className="sugar-quick-header">
+                <span className="sugar-quick-label">{type.label}</span>
+                <span className="sugar-quick-sub">{type.subtitle}</span>
+              </div>
+              <div className="sugar-quick-body">
+                <div className="sugar-input-row">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="30"
+                    max="600"
+                    placeholder="mg/dL"
+                    value={val}
+                    onChange={(e) => setV(e.target.value)}
+                    className="sugar-quick-input"
+                    onKeyDown={(e) => e.key === "Enter" && saveQuickSugar(type, val, setV, ref, setSv)}
+                  />
+                  {st && <span className={`badge ${st.cls}`}>{st.label}</span>}
+                </div>
+                <button
+                  className="btn btn-small sugar-save-btn"
+                  disabled={busy || !val}
+                  onClick={() => saveQuickSugar(type, val, setV, ref, setSv)}
+                >
+                  {busy ? "Saving…" : `Save ${type.label}`}
+                </button>
+              </div>
+              <p className="sugar-quick-range">
+                Normal: {type.key === "FBS" ? "70–99" : "<140"} mg/dL
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Trends header with Log Blood Sugar action */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1.2rem", flexWrap: "wrap", gap: ".5rem" }}>
         <h3 className="dash-heading" style={{ margin: 0 }}>Trend Analysis</h3>
         {metric === "sugar" && (
           <button className="btn btn-small btn-outline" onClick={() => setLogSugarOpen(true)}>
-            + Log Reading
+            + Custom Log
           </button>
         )}
       </div>
@@ -149,9 +248,9 @@ export default function DashboardCharts({ today, isAdmin }) {
         Live interactive charts · updates automatically when records are saved
       </p>
 
-      {/* Log Blood Sugar Modal */}
+      {/* Log Blood Sugar Modal (custom / advanced) */}
       {logSugarOpen && (
-        <Modal title="Log Blood Sugar" onClose={() => setLogSugarOpen(false)}>
+        <Modal title="Log Blood Sugar (Custom)" onClose={() => setLogSugarOpen(false)}>
           <Field label="Glucose Level (mg/dL) *">
             <input
               type="number"
@@ -169,16 +268,16 @@ export default function DashboardCharts({ today, isAdmin }) {
               value={sugarForm.meal_context}
               onChange={(e) => setSugarForm({ ...sugarForm, meal_context: e.target.value })}
             >
-              <option value="Fasting">Fasting (Before Breakfast)</option>
+              <option value="Fasting">FBS – Fasting (Before Breakfast)</option>
+              <option value="Post Lunch (2 hrs)">PPBS – Post Lunch (2 hrs)</option>
+              <option value="Post Dinner (2 hrs)">PPBS – Post Dinner (2 hrs)</option>
               <option value="Before Lunch">Before Lunch</option>
-              <option value="Post Lunch (2 hrs)">Post Lunch (2 hrs)</option>
               <option value="Before Dinner">Before Dinner</option>
-              <option value="Post Dinner (2 hrs)">Post Dinner (2 hrs)</option>
               <option value="Bedtime">Bedtime</option>
               <option value="Random">Random Check</option>
             </select>
           </Field>
-          <Field label="Notes">
+          <Field label="Notes (optional)">
             <input
               type="text"
               placeholder="e.g. After morning walk"
